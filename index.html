@@ -1,700 +1,562 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#2563eb" />
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json" />
-    <title>POS銷售系統</title>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS系統 - 商品銷售報表分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f3f4f6; }
-        .container { height: 100vh; display: flex; flex-direction: column; }
-        
-        /* 頂部導航 */
-        .header { background: white; padding: 16px; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .nav { display: flex; justify-content: space-between; align-items: center; }
-        .title { font-size: 24px; font-weight: bold; color: #1f2937; }
-        .nav-buttons { display: flex; gap: 8px; }
-        .nav-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
-        .nav-btn.active { background: #2563eb; color: white; }
-        .nav-btn:not(.active) { background: #e5e7eb; color: #374151; }
-        .nav-btn:hover:not(.active) { background: #d1d5db; }
-        
-        /* 主要內容 */
-        .main { flex: 1; overflow: hidden; }
-        .page { display: none; height: 100%; }
-        .page.active { display: flex; flex-direction: column; }
-        
-        /* 共用樣式 */
-        .page-content { flex: 1; padding: 16px; overflow-y: auto; }
-        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
-        .card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
-        .input { padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; width: 100%; }
-        .input:focus { outline: none; border-color: #3b82f6; }
-        .button { padding: 12px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; }
-        .button:hover { background: #1d4ed8; }
-        .button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .button-green { background: #16a34a; }
-        .button-green:hover { background: #15803d; }
-        .button-red { background: #dc2626; }
-        .button-red:hover { background: #b91c1c; }
-        .button-gray { background: #6b7280; }
-        .button-gray:hover { background: #4b5563; }
-        
-        /* 銷售頁面樣式 */
-        .sales-layout { flex: 1; display: flex; flex-direction: column; }
-        @media (min-width: 769px) { .sales-layout { flex-direction: row; } }
-        
-        .products-area { flex: 2; padding: 16px; overflow-y: auto; }
-        .cart-area { flex: 1; background: white; border-top: 2px solid #e5e7eb; padding: 16px; min-height: 200px; display: flex; flex-direction: column; }
-        @media (min-width: 769px) { 
-            .cart-area { width: 320px; border-top: none; border-left: 1px solid #e5e7eb; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .manual-input { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
-        .input-group { display: flex; gap: 8px; flex-direction: column; }
-        @media (min-width: 769px) { .input-group { flex-direction: row; } }
-        
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        @media (min-width: 769px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); } }
-        
-        .product-card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; border: 2px solid transparent; }
-        .product-card:hover { border-color: #60a5fa; }
-        
-        .cart-items { flex: 1; overflow-y: auto; margin-bottom: 12px; }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .cart-controls { display: flex; gap: 4px; align-items: center; }
-        .control-btn { width: 28px; height: 28px; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        
-        /* 表格樣式 */
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        .table th { background: #f9fafb; font-weight: 600; }
-        
-        /* 模態框 */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
-        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; }
-        .hidden { display: none; }
-        
-        /* 統計卡片 */
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-        @media (min-width: 769px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
-        .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stat-number { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 30px 40px;
+            background: #f8f9ff;
+            border-bottom: 1px solid #e0e6ff;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .date-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-picker label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .date-picker input {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .date-picker input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(45deg, #48bb78, #38b2ac);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+        }
+
+        .dashboard {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            min-height: 600px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .chart-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .chart-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(45deg, #4299e1, #9f7aea);
+            border-radius: 2px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-table tr:hover {
+            background: rgba(66, 153, 225, 0.05);
+        }
+
+        .percentage {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: linear-gradient(45deg, #bee3f8, #90cdf4);
+            color: #2b6cb0;
+        }
+
+        .summary {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-number {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4299e1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .dashboard {
+                padding: 20px;
+            }
+
+            .controls {
+                padding: 20px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .refresh-btn {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="app" class="container">
-        <!-- 頂部導航 -->
+    <div class="container">
         <div class="header">
-            <div class="nav">
-                <h1 class="title">POS銷售系統</h1>
-                <div class="nav-buttons">
-                    <button class="nav-btn active" onclick="showPage('sales')">銷售</button>
-                    <button class="nav-btn" onclick="showPage('products')">商品</button>
-                    <button class="nav-btn" onclick="showPage('reports')">報表</button>
-                    <button class="nav-btn" onclick="showPage('backup')">備份</button>
-                </div>
-            </div>
+            <h1>📊 商品銷售分析報表</h1>
+            <p>掌握商品熱銷程度，優化銷售策略</p>
         </div>
 
-        <div class="main">
-            <!-- 銷售頁面 -->
-            <div id="salesPage" class="page active">
-                <div class="sales-layout">
-                    <div class="products-area">
-                        <h2 class="section-title">商品選擇</h2>
-                        
-                        <div class="manual-input">
-                            <h3 style="font-weight: 500; margin-bottom: 12px;">快速新增商品</h3>
-                            <div class="input-group">
-                                <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex: 1;">
-                                <input id="productPrice" type="number" class="input" placeholder="價格" step="0.01" style="width: 120px;">
-                                <button id="addManualBtn" class="button button-green">新增</button>
-                            </div>
-                        </div>
-                        
-                        <div id="productGrid" class="product-grid"></div>
-                    </div>
-
-                    <div class="cart-area">
-                        <h2 class="section-title">購物車</h2>
-                        <div id="cartItems" class="cart-items">
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280;">
-                                <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
-                                <p>購物車是空的</p>
-                            </div>
-                        </div>
-                        <div style="padding-top: 12px; border-top: 1px solid #e5e7eb;">
-                            <div id="totalAmount" style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">總計: $0</div>
-                            <button id="checkoutBtn" class="button" style="width: 100%;" disabled>結帳</button>
-                        </div>
-                    </div>
-                </div>
+        <div class="controls">
+            <div class="date-picker">
+                <label>起始日期:</label>
+                <input type="date" id="startDate">
             </div>
-
-            <!-- 商品管理頁面 -->
-            <div id="productsPage" class="page">
-                <div class="page-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h2 class="section-title" style="margin: 0;">商品管理</h2>
-                        <button class="button button-green" onclick="showProductModal()">新增商品</button>
-                    </div>
-                    
-                    <div class="card">
-                        <table class="table" id="productsTable">
-                            <thead>
-                                <tr>
-                                    <th>商品名稱</th>
-                                    <th>價格</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productsTableBody">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="date-picker">
+                <label>結束日期:</label>
+                <input type="date" id="endDate">
             </div>
-
-            <!-- 報表頁面 -->
-            <div id="reportsPage" class="page">
-                <div class="page-content">
-                    <h2 class="section-title">銷售報表</h2>
-                    
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div id="totalProducts" class="stat-number">0</div>
-                            <div class="stat-label">商品總數</div>
-                        </div>
-                        <div class="stat-card">
-                            <div id="totalSales" class="stat-number">0</div>
-                            <div class="stat-label">銷售筆數</div>
-                        </div>
-                        <div class="stat-card">
-                            <div id="totalRevenue" class="stat-number">$0</div>
-                            <div class="stat-label">總營收</div>
-                        </div>
-                        <div class="stat-card">
-                            <div id="avgOrder" class="stat-number">$0</div>
-                            <div class="stat-label">平均客單價</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3 style="font-weight: 600; margin-bottom: 16px;">銷售記錄</h3>
-                        <div id="salesHistory" style="max-height: 300px; overflow-y: auto;">
-                            <p style="text-align: center; color: #6b7280; padding: 40px;">暫無銷售記錄</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 備份頁面 -->
-            <div id="backupPage" class="page">
-                <div class="page-content">
-                    <h2 class="section-title">資料備份與還原</h2>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
-                        <div class="card">
-                            <h3 style="font-weight: 600; margin-bottom: 12px;">備份資料</h3>
-                            <p style="color: #6b7280; margin-bottom: 16px;">將所有商品和銷售資料匯出為檔案</p>
-                            <button class="button" onclick="exportData()">匯出資料</button>
-                        </div>
-                        
-                        <div class="card">
-                            <h3 style="font-weight: 600; margin-bottom: 12px;">還原資料</h3>
-                            <p style="color: #6b7280; margin-bottom: 16px;">從備份檔案還原資料</p>
-                            <input type="file" id="importFile" accept=".json" style="margin-bottom: 12px;">
-                            <button class="button button-gray" onclick="importData()">匯入資料</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <button class="refresh-btn" onclick="refreshData()">
+                <span class="spinner" id="spinner"></span>
+                刷新數據
+            </button>
         </div>
-    </div>
 
-    <!-- 商品編輯模態框 -->
-    <div id="productModal" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="modalTitle" style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">新增商品</h3>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; margin-bottom: 4px; font-weight: 500;">商品名稱</label>
-                <input id="modalProductName" type="text" class="input">
+        <div class="dashboard">
+            <div class="chart-container">
+                <h3 class="chart-title">商品銷售數量分析</h3>
+                <div class="chart-wrapper">
+                    <canvas id="quantityChart"></canvas>
+                    <div class="loading" id="loading1">
+                        <span class="spinner"></span>
+                        載入中...
+                    </div>
+                </div>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>商品名稱</th>
+                            <th>銷售數量</th>
+                            <th>佔比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quantityStats">
+                    </tbody>
+                </table>
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 4px; font-weight: 500;">價格</label>
-                <input id="modalProductPrice" type="number" class="input" step="0.01">
-            </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="button" onclick="saveProduct()">儲存</button>
-                <button class="button button-gray" onclick="closeProductModal()">取消</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- 提示對話框 -->
-    <div id="alertModal" class="modal hidden">
-        <div class="modal-content">
-            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">提示訊息</h3>
-            <p id="alertMessage" style="color: #6b7280; margin-bottom: 16px;"></p>
-            <button class="button" onclick="closeAlert()">確定</button>
+            <div class="chart-container">
+                <h3 class="chart-title">商品銷售金額分析</h3>
+                <div class="chart-wrapper">
+                    <canvas id="revenueChart"></canvas>
+                    <div class="loading" id="loading2">
+                        <span class="spinner"></span>
+                        載入中...
+                    </div>
+                </div>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>商品名稱</th>
+                            <th>銷售金額</th>
+                            <th>佔比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="revenueStats">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary">
+                <h3>銷售概況總結</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-number" id="totalProducts">8</div>
+                        <div class="summary-label">銷售商品種類</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-number" id="totalQuantity">1,247</div>
+                        <div class="summary-label">總銷售數量</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-number" id="totalRevenue">NT$ 87,650</div>
+                        <div class="summary-label">總銷售金額</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-number" id="topProduct">珍珠奶茶</div>
+                        <div class="summary-label">最熱銷商品</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // 全域變數
-        let products = [];
-        let cart = [];
-        let cartTotal = 0;
-        let sales = [];
-        let editingProductId = null;
+        // 模擬銷售數據
+        const salesData = [
+            { name: '珍珠奶茶', quantity: 320, unitPrice: 65, color: '#FF6B6B' },
+            { name: '炸雞排', quantity: 180, unitPrice: 80, color: '#4ECDC4' },
+            { name: '滷肉飯', quantity: 245, unitPrice: 55, color: '#45B7D1' },
+            { name: '紅豆餅', quantity: 156, unitPrice: 25, color: '#96CEB4' },
+            { name: '手搖飲料', quantity: 198, unitPrice: 50, color: '#FFEAA7' },
+            { name: '雞蛋糕', quantity: 87, unitPrice: 30, color: '#DDA0DD' },
+            { name: '鹽酥雞', quantity: 142, unitPrice: 70, color: '#98D8C8' },
+            { name: '蔥抓餅', quantity: 89, unitPrice: 45, color: '#F7DC6F' }
+        ];
 
-        // IndexedDB 相關
-        const DB_NAME = 'POSSystemDB';
-        const DB_VERSION = 2;
-        const PRODUCTS_STORE = 'products';
-        const SALES_STORE = 'sales';
+        let quantityChart, revenueChart;
 
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(PRODUCTS_STORE)) {
-                        db.createObjectStore(PRODUCTS_STORE, { keyPath: 'id' });
-                    }
-                    if (!db.objectStoreNames.contains(SALES_STORE)) {
-                        db.createObjectStore(SALES_STORE, { keyPath: 'id' });
-                    }
-                };
-            });
+        // 初始化日期選擇器
+        function initializeDatePickers() {
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('startDate').valueAsDate = lastWeek;
+            document.getElementById('endDate').valueAsDate = today;
         }
 
-        async function dbOperation(storeName, operation, data = null) {
-            try {
-                const db = await initDB();
-                const transaction = db.transaction([storeName], operation === 'getAll' ? 'readonly' : 'readwrite');
-                const store = transaction.objectStore(storeName);
-                let request;
-                
-                switch (operation) {
-                    case 'add': request = store.add(data); break;
-                    case 'put': request = store.put(data); break;
-                    case 'delete': request = store.delete(data); break;
-                    case 'getAll': request = store.getAll(); break;
+        // 創建圓餅圖
+        function createPieChart(canvasId, data, labels, colors, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            return new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverBorderWidth: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: '#4299e1',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label;
+                                    const value = context.formattedValue;
+                                    const percentage = ((context.parsed / context.dataset.data.reduce((a, b) => a + b)) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        duration: 2000
+                    },
+                    interaction: {
+                        intersect: false
+                    }
                 }
-                
-                return new Promise((resolve, reject) => {
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            } catch (error) {
-                console.error('DB操作失敗:', error);
-                return null;
-            }
-        }
-
-        // 頁面切換
-        function showPage(pageName) {
-            // 隱藏所有頁面
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // 更新導航按鈕
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // 顯示目標頁面
-            document.getElementById(pageName + 'Page').classList.add('active');
-            event.target.classList.add('active');
-            
-            // 載入頁面資料
-            switch(pageName) {
-                case 'products':
-                    renderProductsTable();
-                    break;
-                case 'reports':
-                    updateReports();
-                    break;
-            }
-        }
-
-        // 提示功能
-        function showAlert(message) {
-            document.getElementById('alertMessage').textContent = message;
-            document.getElementById('alertModal').classList.remove('hidden');
-        }
-
-        function closeAlert() {
-            document.getElementById('alertModal').classList.add('hidden');
-        }
-
-        // 載入資料
-        async function loadProducts() {
-            const allProducts = await dbOperation(PRODUCTS_STORE, 'getAll');
-            products = allProducts || [];
-            renderProducts();
-        }
-
-        async function loadSales() {
-            const allSales = await dbOperation(SALES_STORE, 'getAll');
-            sales = allSales || [];
-        }
-
-        // 渲染商品網格
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            grid.innerHTML = '';
-            
-            products.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
-                    <div style="font-weight: 500; margin-bottom: 4px;">${product.name}</div>
-                    <div style="color: #2563eb; font-weight: bold;">$${product.price}</div>
-                `;
-                card.onclick = () => addToCart(product);
-                grid.appendChild(card);
             });
         }
 
-        // 渲染商品管理表格
-        function renderProductsTable() {
-            const tbody = document.getElementById('productsTableBody');
+        // 更新統計表格
+        function updateStatsTable(tableId, data, isRevenue = false) {
+            const tbody = document.getElementById(tableId);
+            const total = data.reduce((sum, item) => sum + item.value, 0);
+            
             tbody.innerHTML = '';
             
-            if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6b7280; padding: 40px;">暫無商品資料</td></tr>';
-                return;
-            }
-            
-            products.forEach(product => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>$${product.price}</td>
-                    <td>
-                        <button class="button" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;" onclick="editProduct('${product.id}')">編輯</button>
-                        <button class="button button-red" style="padding: 6px 12px; font-size: 12px;" onclick="deleteProduct('${product.id}')">刪除</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 購物車功能
-        function addToCart(product) {
-            const existingItem = cart.find(item => item.id === product.id);
-            if (existingItem) {
-                existingItem.quantity += 1;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
-            updateCart();
-        }
-
-        function updateCart() {
-            const cartItemsDiv = document.getElementById('cartItems');
-            const totalDiv = document.getElementById('totalAmount');
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            
-            if (cart.length === 0) {
-                cartItemsDiv.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280;">
-                        <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
-                        <p>購物車是空的</p>
-                    </div>
-                `;
-                checkoutBtn.disabled = true;
-                cartTotal = 0;
-            } else {
-                cartItemsDiv.innerHTML = '';
-                cartTotal = 0;
+            data.forEach(item => {
+                const row = tbody.insertRow();
+                const percentage = ((item.value / total) * 100).toFixed(1);
                 
-                cart.forEach(item => {
-                    cartTotal += item.price * item.quantity;
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'cart-item';
-                    itemDiv.innerHTML = `
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; font-size: 14px;">${item.name}</div>
-                            <div style="font-size: 12px; color: #6b7280;">$${item.price} × ${item.quantity}</div>
-                        </div>
-                        <div class="cart-controls">
-                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
-                            <span style="width: 32px; text-align: center; font-size: 14px;">${item.quantity}</span>
-                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
-                            <button class="control-btn" onclick="removeFromCart('${item.id}')" style="background: #fef2f2; color: #dc2626;">×</button>
-                        </div>
-                    `;
-                    cartItemsDiv.appendChild(itemDiv);
-                });
-                checkoutBtn.disabled = false;
-            }
-            
-            totalDiv.textContent = `總計: $${cartTotal}`;
-        }
-
-        function updateQuantity(productId, newQuantity) {
-            if (newQuantity <= 0) {
-                removeFromCart(productId);
-            } else {
-                const item = cart.find(item => item.id === productId);
-                if (item) {
-                    item.quantity = newQuantity;
-                    updateCart();
-                }
-            }
-        }
-
-        function removeFromCart(productId) {
-            cart = cart.filter(item => item.id !== productId);
-            updateCart();
-        }
-
-        async function checkout() {
-            if (cart.length === 0) return;
-            
-            const sale = {
-                id: Date.now().toString(),
-                items: [...cart],
-                total: cartTotal,
-                timestamp: new Date().toISOString()
-            };
-            
-            await dbOperation(SALES_STORE, 'add', sale);
-            sales.push(sale);
-            
-            showAlert(`結帳成功！總金額：$${cartTotal}`);
-            cart = [];
-            updateCart();
-        }
-
-        // 商品管理
-        function showProductModal(product = null) {
-            editingProductId = product ? product.id : null;
-            document.getElementById('modalTitle').textContent = product ? '編輯商品' : '新增商品';
-            document.getElementById('modalProductName').value = product ? product.name : '';
-            document.getElementById('modalProductPrice').value = product ? product.price : '';
-            document.getElementById('productModal').classList.remove('hidden');
-        }
-
-        function closeProductModal() {
-            document.getElementById('productModal').classList.add('hidden');
-            editingProductId = null;
-        }
-
-        async function saveProduct() {
-            const name = document.getElementById('modalProductName').value.trim();
-            const price = parseFloat(document.getElementById('modalProductPrice').value);
-            
-            if (!name || !price) {
-                showAlert('請輸入商品名稱和價格');
-                return;
-            }
-            
-            const product = {
-                id: editingProductId || Date.now().toString(),
-                name: name,
-                price: price
-            };
-            
-            await dbOperation(PRODUCTS_STORE, 'put', product);
-            
-            if (editingProductId) {
-                const index = products.findIndex(p => p.id === editingProductId);
-                if (index !== -1) {
-                    products[index] = product;
-                }
-            } else {
-                products.push(product);
-            }
-            
-            renderProducts();
-            renderProductsTable();
-            closeProductModal();
-            showAlert(editingProductId ? '商品更新成功' : '商品新增成功');
-        }
-
-        function editProduct(id) {
-            const product = products.find(p => p.id === id);
-            if (product) {
-                showProductModal(product);
-            }
-        }
-
-        async function deleteProduct(id) {
-            if (!confirm('確定要刪除此商品嗎？')) return;
-            
-            await dbOperation(PRODUCTS_STORE, 'delete', id);
-            products = products.filter(p => p.id !== id);
-            renderProducts();
-            renderProductsTable();
-            showAlert('商品刪除成功');
-        }
-
-        // 手動新增商品
-        async function addManualProduct() {
-            const name = document.getElementById('productName').value.trim();
-            const price = parseFloat(document.getElementById('productPrice').value);
-            
-            if (!name || !price) {
-                showAlert('請輸入商品名稱和價格');
-                return;
-            }
-            
-            const product = {
-                id: Date.now().toString(),
-                name: name,
-                price: price
-            };
-            
-            await dbOperation(PRODUCTS_STORE, 'put', product);
-            products.push(product);
-            addToCart(product);
-            
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            
-            renderProducts();
-        }
-
-        // 報表功能
-        function updateReports() {
-            const totalProductsEl = document.getElementById('totalProducts');
-            const totalSalesEl = document.getElementById('totalSales');
-            const totalRevenueEl = document.getElementById('totalRevenue');
-            const avgOrderEl = document.getElementById('avgOrder');
-            const salesHistoryEl = document.getElementById('salesHistory');
-            
-            totalProductsEl.textContent = products.length;
-            totalSalesEl.textContent = sales.length;
-            
-            const revenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-            totalRevenueEl.textContent = `$${revenue}`;
-            avgOrderEl.textContent = sales.length > 0 ? `$${Math.round(revenue / sales.length)}` : '$0';
-            
-            if (sales.length === 0) {
-                salesHistoryEl.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">暫無銷售記錄</p>';
-            } else {
-                salesHistoryEl.innerHTML = '';
-                sales.slice(0, 10).forEach(sale => {
-                    const saleDiv = document.createElement('div');
-                    saleDiv.style.cssText = 'padding: 12px; border-bottom: 1px solid #f3f4f6;';
-                    saleDiv.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <span style="font-size: 12px; color: #6b7280;">${new Date(sale.timestamp).toLocaleString('zh-TW')}</span>
-                            <span style="font-weight: 600;">$${sale.total}</span>
-                        </div>
-                        <div style="font-size: 12px; color: #6b7280;">
-                            ${sale.items.map(item => `${item.name}×${item.quantity}`).join(', ')}
-                        </div>
-                    `;
-                    salesHistoryEl.appendChild(saleDiv);
-                });
-            }
-        }
-
-        // 備份功能
-        function exportData() {
-            const data = {
-                products: products,
-                sales: sales,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `POS備份_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-showAlert('資料匯出成功！');
-        }
-
-        function importData() {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showAlert('請選擇要匯入的檔案');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (!confirm('匯入資料將覆蓋現有資料，確定要繼續嗎？')) return;
-                    
-                    // 匯入商品
-                    if (data.products) {
-                        for (const product of data.products) {
-                            await dbOperation(PRODUCTS_STORE, 'put', product);
-                        }
-                        products = data.products;
-                        renderProducts();
-                        renderProductsTable();
-                    }
-                    
-                    // 匯入銷售記錄
-                    if (data.sales) {
-                        for (const sale of data.sales) {
-                            await dbOperation(SALES_STORE, 'put', sale);
-                        }
-                        sales = data.sales;
-                    }
-                    
-                    fileInput.value = '';
-                    showAlert('資料匯入成功！');
-                    
-                } catch (error) {
-                    console.error('匯入失敗:', error);
-                    showAlert('匯入失敗，請檢查檔案格式');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // 初始化應用
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 載入資料
-            await loadProducts();
-            await loadSales();
-            
-            // 綁定事件
-            document.getElementById('addManualBtn').onclick = addManualProduct;
-            document.getElementById('checkoutBtn').onclick = checkout;
-            
-            console.log('POS系統初始化完成');
-        });
-
-        // Service Worker註冊
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async function() {
-                try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker註冊成功');
-                } catch (error) {
-                    console.error('Service Worker註冊失敗:', error);
-                }
+                row.innerHTML = `
+                    <td style="font-weight: 600;">${item.name}</td>
+                    <td>${isRevenue ? `NT$ ${item.value.toLocaleString()}` : item.value.toLocaleString()}</td>
+                    <td><span class="percentage">${percentage}%</span></td>
+                `;
             });
         }
+
+        // 更新總結數據
+        function updateSummary() {
+            const totalQuantity = salesData.reduce((sum, item) => sum + item.quantity, 0);
+            const totalRevenue = salesData.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+            const topProduct = salesData.reduce((max, item) => 
+                item.quantity > max.quantity ? item : max
+            );
+
+            document.getElementById('totalProducts').textContent = salesData.length;
+            document.getElementById('totalQuantity').textContent = totalQuantity.toLocaleString();
+            document.getElementById('totalRevenue').textContent = `NT$ ${totalRevenue.toLocaleString()}`;
+            document.getElementById('topProduct').textContent = topProduct.name;
+        }
+
+        // 初始化圖表
+        function initializeCharts() {
+            // 銷售數量圖表
+            const quantityData = salesData.map(item => item.quantity);
+            const revenueData = salesData.map(item => item.quantity * item.unitPrice);
+            const labels = salesData.map(item => item.name);
+            const colors = salesData.map(item => item.color);
+
+            quantityChart = createPieChart('quantityChart', quantityData, labels, colors, '銷售數量');
+            revenueChart = createPieChart('revenueChart', revenueData, labels, colors, '銷售金額');
+
+            // 更新統計表格
+            const quantityStats = salesData.map(item => ({
+                name: item.name,
+                value: item.quantity
+            })).sort((a, b) => b.value - a.value);
+
+            const revenueStats = salesData.map(item => ({
+                name: item.name,
+                value: item.quantity * item.unitPrice
+            })).sort((a, b) => b.value - a.value);
+
+            updateStatsTable('quantityStats', quantityStats);
+            updateStatsTable('revenueStats', revenueStats, true);
+            updateSummary();
+        }
+
+        // 刷新數據
+        function refreshData() {
+            const spinner = document.getElementById('spinner');
+            const loadings = document.querySelectorAll('.loading');
+            
+            // 顯示載入動畫
+            spinner.style.display = 'inline-block';
+            loadings.forEach(loading => loading.style.display = 'block');
+            
+            // 模擬數據載入延遲
+            setTimeout(() => {
+                // 隨機調整數據（模擬實際銷售變化）
+                salesData.forEach(item => {
+                    const variation = Math.random() * 0.3 - 0.15; // ±15% 變化
+                    item.quantity = Math.max(1, Math.floor(item.quantity * (1 + variation)));
+                });
+
+                // 重新初始化圖表
+                quantityChart.destroy();
+                revenueChart.destroy();
+                initializeCharts();
+
+                // 隱藏載入動畫
+                spinner.style.display = 'none';
+                loadings.forEach(loading => loading.style.display = 'none');
+            }, 1500);
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDatePickers();
+            initializeCharts();
+        });
     </script>
 </body>
 </html>
