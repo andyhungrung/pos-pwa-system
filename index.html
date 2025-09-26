@@ -5,334 +5,330 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#2563eb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="POS系統" />
     <link rel="manifest" href="manifest.json" />
     <title>POS銷售系統</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
-    <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
     
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f3f4f6; }
+        .container { height: 100vh; display: flex; flex-direction: column; }
+        .header { background: white; padding: 16px; border-bottom: 1px solid #e5e7eb; }
+        .title { font-size: 24px; font-weight: bold; color: #1f2937; text-align: center; }
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* 手機樣式 */
         @media (max-width: 768px) {
-            .mobile-products-area { flex: 2 !important; min-height: 0 !important; }
-            .mobile-cart-area { flex: 1 !important; min-height: 200px !important; max-height: 350px !important; }
-            .mobile-product-button { min-height: 90px !important; padding: 12px 8px !important; }
-            .mobile-input { padding: 16px 12px !important; font-size: 16px !important; min-height: 56px !important; }
-            .mobile-button { padding: 16px !important; min-height: 56px !important; min-width: 56px !important; }
-            .mobile-cart-item { padding: 8px 0 !important; }
-            .mobile-cart-control { min-width: 36px !important; min-height: 36px !important; }
-            .mobile-border { border-left: none !important; border-top: 2px solid #e5e7eb !important; }
+            .products-area { flex: 2; padding: 16px; overflow-y: auto; }
+            .cart-area { flex: 1; background: white; border-top: 2px solid #e5e7eb; padding: 16px; min-height: 200px; max-height: 350px; display: flex; flex-direction: column; }
         }
-        * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-        input, textarea { -webkit-user-select: text; user-select: text; }
+        
+        /* 桌面樣式 */
+        @media (min-width: 769px) {
+            .main { flex-direction: row; }
+            .products-area { flex: 1; padding: 24px; }
+            .cart-area { width: 320px; background: white; border-left: 1px solid #e5e7eb; padding: 24px; display: flex; flex-direction: column; }
+        }
+        
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+        .manual-input { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
+        .input-group { display: flex; gap: 8px; flex-direction: column; }
+        @media (min-width: 769px) { .input-group { flex-direction: row; } }
+        
+        .input { padding: 16px 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+        .input:focus { outline: none; border-color: #3b82f6; }
+        .button { padding: 16px; background: #16a34a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; }
+        .button:hover { background: #15803d; }
+        .button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .button-blue { background: #2563eb; }
+        .button-blue:hover { background: #1d4ed8; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 769px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); } }
+        
+        .product-card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 2px solid transparent; cursor: pointer; text-align: center; min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
+        .product-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-color: #60a5fa; }
+        .product-name { font-weight: 500; margin-bottom: 4px; }
+        .product-price { color: #2563eb; font-weight: bold; }
+        
+        .cart-items { flex: 1; overflow-y: auto; margin-bottom: 12px; }
+        .cart-item { display: flex; justify-content: between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+        .cart-item-info { flex: 1; min-width: 0; }
+        .cart-item-name { font-weight: 500; font-size: 14px; }
+        .cart-item-detail { font-size: 12px; color: #6b7280; }
+        .cart-controls { display: flex; gap: 4px; align-items: center; }
+        .control-btn { width: 32px; height: 32px; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .control-btn:hover { background: #d1d5db; }
+        .quantity { width: 32px; text-align: center; font-size: 14px; }
+        
+        .cart-total { padding-top: 12px; border-top: 1px solid #e5e7eb; }
+        .total-text { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; }
+        .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .modal-text { color: #6b7280; margin-bottom: 16px; }
+        .hidden { display: none; }
+        
+        .empty-cart { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="app" class="container">
+        <div class="header">
+            <h1 class="title">POS銷售系統</h1>
+        </div>
+
+        <div class="main">
+            <div class="products-area">
+                <h2 class="section-title">商品選擇</h2>
+                
+                <div class="manual-input">
+                    <h3 style="font-weight: 500; margin-bottom: 12px;">快速新增商品</h3>
+                    <div class="input-group">
+                        <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex: 1;">
+                        <input id="productPrice" type="number" class="input" placeholder="價格" step="0.01" style="width: 120px;">
+                        <button id="addManualBtn" class="button">新增</button>
+                    </div>
+                </div>
+                
+                <div id="productGrid" class="product-grid">
+                    <!-- 商品將在這裡動態加載 -->
+                </div>
+            </div>
+
+            <div class="cart-area">
+                <h2 class="section-title">購物車</h2>
+                
+                <div id="cartItems" class="cart-items">
+                    <div class="empty-cart">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
+                        <p>購物車是空的</p>
+                    </div>
+                </div>
+                
+                <div class="cart-total">
+                    <div id="totalAmount" class="total-text">總計: $0</div>
+                    <button id="checkoutBtn" class="button button-blue" style="width: 100%;" disabled>結帳</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示對話框 -->
+    <div id="alertModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">提示訊息</h3>
+            <p id="alertMessage" class="modal-text"></p>
+            <button id="alertOkBtn" class="button button-blue" style="width: 100%;">確定</button>
+        </div>
+    </div>
 
     <script>
-        // Service Worker註冊
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async function() {
-                try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker註冊成功');
-                } catch (error) {
-                    console.error('Service Worker註冊失敗:', error);
-                }
-            });
-        }
-    </script>
+        // 全局變數
+        let products = [];
+        let cart = [];
+        let cartTotal = 0;
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { ShoppingCart, Package, BarChart3, Settings, Plus, Trash2, Edit, Download, Upload, X } = LucideReact;
-
-        // IndexedDB 配置
+        // IndexedDB 相關
         const DB_NAME = 'POSSystemDB';
-        const DB_VERSION = 2;
+        const DB_VERSION = 1;
         const PRODUCTS_STORE = 'products';
-        const SALES_STORE = 'sales';
 
-        const initDB = () => {
+        function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
                 request.onerror = () => reject(request.error);
                 request.onsuccess = () => resolve(request.result);
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
-                    if (db.objectStoreNames.contains(PRODUCTS_STORE)) {
-                        db.deleteObjectStore(PRODUCTS_STORE);
+                    if (!db.objectStoreNames.contains(PRODUCTS_STORE)) {
+                        db.createObjectStore(PRODUCTS_STORE, { keyPath: 'id' });
                     }
-                    if (db.objectStoreNames.contains(SALES_STORE)) {
-                        db.deleteObjectStore(SALES_STORE);
-                    }
-                    const productStore = db.createObjectStore(PRODUCTS_STORE, { keyPath: 'id' });
-                    const salesStore = db.createObjectStore(SALES_STORE, { keyPath: 'id' });
                 };
             });
-        };
+        }
 
-        const dbOperation = async (storeName, operation, data = null) => {
+        async function dbOperation(storeName, operation, data = null) {
             try {
                 const db = await initDB();
                 const transaction = db.transaction([storeName], operation === 'getAll' ? 'readonly' : 'readwrite');
                 const store = transaction.objectStore(storeName);
                 let request;
+                
                 switch (operation) {
                     case 'add': request = store.add(data); break;
                     case 'put': request = store.put(data); break;
-                    case 'delete': request = store.delete(data); break;
                     case 'getAll': request = store.getAll(); break;
                 }
+                
                 return new Promise((resolve, reject) => {
                     request.onsuccess = () => resolve(request.result);
                     request.onerror = () => reject(request.error);
                 });
             } catch (error) {
-                throw error;
+                console.error('DB操作失敗:', error);
+                return null;
             }
-        };
+        }
 
-        const POS = () => {
-            const [currentPage, setCurrentPage] = useState('sales');
-            const [products, setProducts] = useState([]);
-            const [cart, setCart] = useState([]);
-            const [cartTotal, setCartTotal] = useState(0);
-            const [manualProduct, setManualProduct] = useState({ name: '', price: '' });
-            const [showAlert, setShowAlert] = useState(false);
-            const [alertMessage, setAlertMessage] = useState('');
+        // 顯示提示
+        function showAlert(message) {
+            document.getElementById('alertMessage').textContent = message;
+            document.getElementById('alertModal').classList.remove('hidden');
+        }
 
-            useEffect(() => {
-                loadProducts();
-            }, []);
+        // 載入商品
+        async function loadProducts() {
+            const allProducts = await dbOperation(PRODUCTS_STORE, 'getAll');
+            products = allProducts || [];
+            renderProducts();
+        }
 
-            useEffect(() => {
-                const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                setCartTotal(total);
-            }, [cart]);
+        // 渲染商品網格
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-price">$${product.price}</div>
+                `;
+                card.onclick = () => addToCart(product);
+                grid.appendChild(card);
+            });
+        }
 
-            const loadProducts = async () => {
-                try {
-                    const allProducts = await dbOperation(PRODUCTS_STORE, 'getAll');
-                    setProducts(allProducts || []);
-                } catch (error) {
-                    console.error('載入商品失敗:', error);
-                }
-            };
+        // 添加到購物車
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            updateCart();
+        }
 
-            const showAlertMessage = (message) => {
-                setAlertMessage(message);
-                setShowAlert(true);
-            };
-
-            const addToCart = (product) => {
-                const existingItem = cart.find(item => item.id === product.id);
-                if (existingItem) {
-                    setCart(cart.map(item => 
-                        item.id === product.id 
-                            ? { ...item, quantity: item.quantity + 1 }
-                            : item
-                    ));
-                } else {
-                    setCart([...cart, { ...product, quantity: 1 }]);
-                }
-            };
-
-            const addManualProduct = () => {
-                if (manualProduct.name && manualProduct.price) {
-                    const product = {
-                        id: 'manual_' + Date.now(),
-                        name: manualProduct.name,
-                        price: parseFloat(manualProduct.price)
-                    };
-                    addToCart(product);
-                    setManualProduct({ name: '', price: '' });
-                } else {
-                    showAlertMessage('請輸入商品名稱和價格');
-                }
-            };
-
-            const removeFromCart = (productId) => {
-                setCart(cart.filter(item => item.id !== productId));
-            };
-
-            const updateCartQuantity = (productId, quantity) => {
-                if (quantity <= 0) {
-                    removeFromCart(productId);
-                    return;
-                }
-                setCart(cart.map(item => 
-                    item.id === productId 
-                        ? { ...item, quantity: quantity }
-                        : item
-                ));
-            };
-
-            const checkout = () => {
-                if (cart.length === 0) {
-                    showAlertMessage('購物車是空的');
-                    return;
-                }
-                showAlertMessage(`結帳成功！總金額：$${cartTotal}`);
-                setCart([]);
-            };
-
-            return (
-                <div className="h-screen bg-gray-100 flex flex-col">
-                    {/* 頂部導航 */}
-                    <div className="bg-white shadow-sm border-b">
-                        <div className="flex items-center justify-between px-4 md:px-6 py-4">
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-800">POS系統</h1>
-                            <div className="flex gap-1 md:gap-2">
-                                <button
-                                    onClick={() => setCurrentPage('sales')}
-                                    className={`px-2 md:px-4 py-2 rounded-md flex items-center gap-1 text-sm ${
-                                        currentPage === 'sales' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-                                    }`}
-                                >
-                                    <ShoppingCart size={16} />
-                                    <span className="hidden sm:inline">銷售</span>
-                                </button>
-                            </div>
-                        </div>
+        // 更新購物車顯示
+        function updateCart() {
+            const cartItemsDiv = document.getElementById('cartItems');
+            const totalDiv = document.getElementById('totalAmount');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            
+            if (cart.length === 0) {
+                cartItemsDiv.innerHTML = `
+                    <div class="empty-cart">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
+                        <p>購物車是空的</p>
                     </div>
-
-                    {/* 主要內容 */}
-                    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                        {/* 商品選擇區域 */}
-                        <div className="flex-1 mobile-products-area p-4 md:p-6 overflow-auto">
-                            <div className="h-full flex flex-col">
-                                <h2 className="text-lg md:text-xl font-semibold mb-4">商品選擇</h2>
-                                
-                                {/* 手動輸入商品 */}
-                                <div className="bg-white p-4 rounded-lg shadow mb-4">
-                                    <h3 className="font-medium mb-3">快速新增商品</h3>
-                                    <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
-                                        <input
-                                            type="text"
-                                            placeholder="商品名稱"
-                                            value={manualProduct.name}
-                                            onChange={(e) => setManualProduct({ ...manualProduct, name: e.target.value })}
-                                            className="w-full md:flex-1 border-2 border-gray-300 rounded-lg mobile-input focus:border-blue-500 focus:outline-none"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="價格"
-                                            value={manualProduct.price}
-                                            onChange={(e) => setManualProduct({ ...manualProduct, price: e.target.value })}
-                                            className="w-full md:w-32 border-2 border-gray-300 rounded-lg mobile-input focus:border-blue-500 focus:outline-none"
-                                            step="0.01"
-                                        />
-                                        <button
-                                            onClick={addManualProduct}
-                                            className="w-full md:w-auto bg-green-600 text-white rounded-lg hover:bg-green-700 mobile-button flex items-center justify-center gap-2 font-medium disabled:opacity-50"
-                                            disabled={!manualProduct.name || !manualProduct.price}
-                                        >
-                                            <Plus size={20} />
-                                            新增
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                {/* 商品網格 */}
-                                <div className="flex-1 overflow-auto">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                        {products.map(product => (
-                                            <button
-                                                key={product.id}
-                                                onClick={() => addToCart(product)}
-                                                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all mobile-product-button flex flex-col justify-center items-center text-center border-2 hover:border-blue-400"
-                                            >
-                                                <div className="font-medium mb-1">{product.name}</div>
-                                                <div className="text-blue-600 font-bold">${product.price}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                `;
+                checkoutBtn.disabled = true;
+                cartTotal = 0;
+            } else {
+                cartItemsDiv.innerHTML = '';
+                cartTotal = 0;
+                
+                cart.forEach(item => {
+                    cartTotal += item.price * item.quantity;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'cart-item';
+                    itemDiv.innerHTML = `
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-detail">$${item.price} × ${item.quantity}</div>
                         </div>
-
-                        {/* 購物車區域 */}
-                        <div className="w-full md:w-80 mobile-cart-area bg-white mobile-border p-4 md:p-6 flex flex-col">
-                            <h2 className="text-lg md:text-xl font-semibold mb-3">購物車</h2>
-                            
-                            <div className="flex-1 overflow-auto mb-3">
-                                {cart.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                        <ShoppingCart size={32} className="mb-2" />
-                                        <p>購物車是空的</p>
-                                    </div>
-                                ) : (
-                                    cart.map(item => (
-                                        <div key={item.id} className="flex items-center justify-between mobile-cart-item border-b py-2">
-                                            <div className="flex-1">
-                                                <div className="font-medium text-sm">{item.name}</div>
-                                                <div className="text-xs text-gray-600">${item.price} × {item.quantity}</div>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <button
-                                                    onClick={() => updateCartQuantity(item.id, item.quantity - 1)}
-                                                    className="mobile-cart-control bg-gray-200 rounded hover:bg-gray-300 flex items-center justify-center"
-                                                >
-                                                    -
-                                                </button>
-                                                <span className="w-8 text-center text-sm">{item.quantity}</span>
-                                                <button
-                                                    onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
-                                                    className="mobile-cart-control bg-gray-200 rounded hover:bg-gray-300 flex items-center justify-center"
-                                                >
-                                                    +
-                                                </button>
-                                                <button
-                                                    onClick={() => removeFromCart(item.id)}
-                                                    className="text-red-600 hover:text-red-800 p-1"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            
-                            <div className="border-t pt-3">
-                                <div className="text-lg font-bold mb-3">總計: ${cartTotal}</div>
-                                <button
-                                    onClick={checkout}
-                                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
-                                    disabled={cart.length === 0}
-                                >
-                                    結帳
-                                </button>
-                            </div>
+                        <div class="cart-controls">
+                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                            <span class="quantity">${item.quantity}</span>
+                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                            <button class="control-btn" onclick="removeFromCart('${item.id}')" style="background: #fef2f2; color: #dc2626;">×</button>
                         </div>
-                    </div>
+                    `;
+                    cartItemsDiv.appendChild(itemDiv);
+                });
+                checkoutBtn.disabled = false;
+            }
+            
+            totalDiv.textContent = `總計: $${cartTotal}`;
+        }
 
-                    {/* 提示對話框 */}
-                    {showAlert && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                                <h3 className="text-lg font-semibold mb-2">提示訊息</h3>
-                                <p className="text-gray-600 mb-4">{alertMessage}</p>
-                                <button
-                                    onClick={() => setShowAlert(false)}
-                                    className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-                                >
-                                    確定
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
+        // 更新商品數量
+        function updateQuantity(productId, newQuantity) {
+            if (newQuantity <= 0) {
+                removeFromCart(productId);
+            } else {
+                const item = cart.find(item => item.id === productId);
+                if (item) {
+                    item.quantity = newQuantity;
+                    updateCart();
+                }
+            }
+        }
 
-        ReactDOM.render(<POS />, document.getElementById('root'));
+        // 從購物車移除
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCart();
+        }
+
+        // 結帳
+        function checkout() {
+            if (cart.length === 0) return;
+            showAlert(`結帳成功！總金額：$${cartTotal}`);
+            cart = [];
+            updateCart();
+        }
+
+        // 添加手動商品
+        async function addManualProduct() {
+            const nameInput = document.getElementById('productName');
+            const priceInput = document.getElementById('productPrice');
+            const name = nameInput.value.trim();
+            const price = parseFloat(priceInput.value);
+            
+            if (!name || !price) {
+                showAlert('請輸入商品名稱和價格');
+                return;
+            }
+            
+            const product = {
+                id: 'manual_' + Date.now(),
+                name: name,
+                price: price
+            };
+            
+            // 保存到資料庫
+            await dbOperation(PRODUCTS_STORE, 'put', product);
+            
+            // 添加到購物車
+            addToCart(product);
+            
+            // 清空輸入框
+            nameInput.value = '';
+            priceInput.value = '';
+            
+            // 重新載入商品
+            await loadProducts();
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 載入商品
+            await loadProducts();
+            
+            // 綁定事件
+            document.getElementById('addManualBtn').onclick = addManualProduct;
+            document.getElementById('checkoutBtn').onclick = checkout;
+            document.getElementById('alertOkBtn').onclick = () => {
+                document.getElementById('alertModal').classList.add('hidden');
+            };
+            
+            console.log('POS系統初始化完成');
+        });
     </script>
 </body>
 </html>
