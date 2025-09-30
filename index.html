@@ -131,10 +131,10 @@
             <div class="nav">
                 <h1 class="title">POS銷售系統</h1>
                 <div class="nav-buttons">
-                    <button class="nav-btn active" data-page="sales">銷售</button>
-                    <button class="nav-btn" data-page="products">商品</button>
-                    <button class="nav-btn" data-page="reports">報表</button>
-                    <button class="nav-btn" data-page="backup">備份</button>
+                    <button class="nav-btn active" onclick="window.showPage('sales')">銷售</button>
+                    <button class="nav-btn" onclick="window.showPage('products')">商品</button>
+                    <button class="nav-btn" onclick="window.showPage('reports')">報表</button>
+                    <button class="nav-btn" onclick="window.showPage('backup')">備份</button>
                 </div>
             </div>
         </div>
@@ -151,7 +151,7 @@
                             <div class="input-group">
                                 <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex: 1;">
                                 <input id="productPrice" type="number" class="input" placeholder="價格" step="0.01" style="width: 120px;">
-                                <button id="addManualBtn" class="button button-green">新增</button>
+                                <button onclick="window.addManualProduct()" class="button button-green">新增</button>
                             </div>
                         </div>
                         
@@ -168,7 +168,7 @@
                         </div>
                         <div style="padding-top: 12px; border-top: 1px solid #e5e7eb;">
                             <div id="totalAmount" style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">總計: $0</div>
-                            <button id="checkoutBtn" class="button" style="width: 100%;" disabled>結帳</button>
+                            <button onclick="window.checkout()" class="button" style="width: 100%;" id="checkoutBtn" disabled>結帳</button>
                         </div>
                     </div>
                 </div>
@@ -179,7 +179,7 @@
                 <div class="page-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 class="section-title" style="margin: 0;">商品管理</h2>
-                        <button class="button button-green" id="addProductBtn">新增商品</button>
+                        <button class="button button-green" onclick="window.showProductModal()">新增商品</button>
                     </div>
                     
                     <div class="card">
@@ -281,14 +281,14 @@
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">備份資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">將所有商品和銷售資料匯出為檔案</p>
-                            <button class="button" id="exportDataBtn">匯出資料</button>
+                            <button class="button" onclick="window.exportData()">匯出資料</button>
                         </div>
                         
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">還原資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">從備份檔案還原資料</p>
                             <input type="file" id="importFile" accept=".json" style="margin-bottom: 12px;">
-                            <button class="button button-gray" id="importDataBtn">匯入資料</button>
+                            <button class="button button-gray" onclick="window.importData()">匯入資料</button>
                         </div>
                     </div>
                 </div>
@@ -309,8 +309,8 @@
                 <input id="modalProductPrice" type="number" class="input" step="0.01">
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="button" id="saveProductBtn">儲存</button>
-                <button class="button button-gray" id="cancelProductBtn">取消</button>
+                <button class="button" onclick="window.saveProduct()">儲存</button>
+                <button class="button button-gray" onclick="window.closeProductModal()">取消</button>
             </div>
         </div>
     </div>
@@ -320,7 +320,7 @@
         <div class="modal-content">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">提示訊息</h3>
             <p id="alertMessage" style="color: #6b7280; margin-bottom: 16px;"></p>
-            <button class="button" id="closeAlertBtn">確定</button>
+            <button class="button" onclick="window.closeAlert()">確定</button>
         </div>
     </div>
 
@@ -388,8 +388,8 @@
             }
         }
 
-        // 頁面切換
-        function showPage(pageName) {
+        // 頁面切換 - 必須定義在全域
+        window.showPage = function(pageName) {
             console.log('正在切換到:', pageName);
             
             // 隱藏所有頁面
@@ -437,17 +437,17 @@
             } catch (error) {
                 console.error('載入頁面資料時發生錯誤:', error);
             }
-        }
+        };
 
         // 提示功能
-        function showAlert(message) {
+        window.showAlert = function(message) {
             document.getElementById('alertMessage').textContent = message;
             document.getElementById('alertModal').classList.remove('hidden');
-        }
+        };
 
-        function closeAlert() {
+        window.closeAlert = function() {
             document.getElementById('alertModal').classList.add('hidden');
-        }
+        };
 
         // 載入資料
         async function loadProducts() {
