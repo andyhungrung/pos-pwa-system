@@ -131,10 +131,10 @@
             <div class="nav">
                 <h1 class="title">POS銷售系統</h1>
                 <div class="nav-buttons">
-                    <button class="nav-btn active" onclick="showPage('sales')">銷售</button>
-                    <button class="nav-btn" onclick="showPage('products')">商品</button>
-                    <button class="nav-btn" onclick="showPage('reports')">報表</button>
-                    <button class="nav-btn" onclick="showPage('backup')">備份</button>
+                    <button class="nav-btn active" data-page="sales">銷售</button>
+                    <button class="nav-btn" data-page="products">商品</button>
+                    <button class="nav-btn" data-page="reports">報表</button>
+                    <button class="nav-btn" data-page="backup">備份</button>
                 </div>
             </div>
         </div>
@@ -179,7 +179,7 @@
                 <div class="page-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 class="section-title" style="margin: 0;">商品管理</h2>
-                        <button class="button button-green" onclick="showProductModal()">新增商品</button>
+                        <button class="button button-green" id="addProductBtn">新增商品</button>
                     </div>
                     
                     <div class="card">
@@ -281,14 +281,14 @@
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">備份資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">將所有商品和銷售資料匯出為檔案</p>
-                            <button class="button" onclick="exportData()">匯出資料</button>
+                            <button class="button" id="exportDataBtn">匯出資料</button>
                         </div>
                         
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">還原資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">從備份檔案還原資料</p>
                             <input type="file" id="importFile" accept=".json" style="margin-bottom: 12px;">
-                            <button class="button button-gray" onclick="importData()">匯入資料</button>
+                            <button class="button button-gray" id="importDataBtn">匯入資料</button>
                         </div>
                     </div>
                 </div>
@@ -309,8 +309,8 @@
                 <input id="modalProductPrice" type="number" class="input" step="0.01">
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="button" onclick="saveProduct()">儲存</button>
-                <button class="button button-gray" onclick="closeProductModal()">取消</button>
+                <button class="button" id="saveProductBtn">儲存</button>
+                <button class="button button-gray" id="cancelProductBtn">取消</button>
             </div>
         </div>
     </div>
@@ -320,7 +320,7 @@
         <div class="modal-content">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">提示訊息</h3>
             <p id="alertMessage" style="color: #6b7280; margin-bottom: 16px;"></p>
-            <button class="button" onclick="closeAlert()">確定</button>
+            <button class="button" id="closeAlertBtn">確定</button>
         </div>
     </div>
 
@@ -402,7 +402,9 @@
             
             // 顯示目標頁面
             document.getElementById(pageName + 'Page').classList.add('active');
-            event.target.classList.add('active');
+            
+            // 更新當前按鈕狀態
+            document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
             
             // 載入頁面資料
             switch(pageName) {
@@ -469,10 +471,10 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${product.name}</td>
-                    <td>$${product.price}</td>
+                    <td>${product.price}</td>
                     <td>
-                        <button class="button" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;" onclick="editProduct('${product.id}')">編輯</button>
-                        <button class="button button-red" style="padding: 6px 12px; font-size: 12px;" onclick="deleteProduct('${product.id}')">刪除</button>
+                        <button class="button edit-product-btn" data-id="${product.id}" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;">編輯</button>
+                        <button class="button button-red delete-product-btn" data-id="${product.id}" style="padding: 6px 12px; font-size: 12px;">刪除</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -515,17 +517,41 @@
                     itemDiv.innerHTML = `
                         <div style="flex: 1;">
                             <div style="font-weight: 500; font-size: 14px;">${item.name}</div>
-                            <div style="font-size: 12px; color: #6b7280;">$${item.price} × ${item.quantity}</div>
+                            <div style="font-size: 12px; color: #6b7280;">${item.price} × ${item.quantity}</div>
                         </div>
                         <div class="cart-controls">
-                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                            <button class="control-btn cart-decrease" data-id="${item.id}" data-qty="${item.quantity}">-</button>
                             <span style="width: 32px; text-align: center; font-size: 14px;">${item.quantity}</span>
-                            <button class="control-btn" onclick="updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
-                            <button class="control-btn" onclick="removeFromCart('${item.id}')" style="background: #fef2f2; color: #dc2626;">×</button>
+                            <button class="control-btn cart-increase" data-id="${item.id}" data-qty="${item.quantity}">+</button>
+                            <button class="control-btn cart-remove" data-id="${item.id}" style="background: #fef2f2; color: #dc2626;">×</button>
                         </div>
                     `;
                     cartItemsDiv.appendChild(itemDiv);
                 });
+                
+                // 綁定購物車按鈕事件
+                cartItemsDiv.querySelectorAll('.cart-decrease').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        const qty = parseInt(this.getAttribute('data-qty'));
+                        updateQuantity(id, qty - 1);
+                    });
+                });
+                
+                cartItemsDiv.querySelectorAll('.cart-increase').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        const qty = parseInt(this.getAttribute('data-qty'));
+                        updateQuantity(id, qty + 1);
+                    });
+                });
+                
+                cartItemsDiv.querySelectorAll('.cart-remove').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        removeFromCart(this.getAttribute('data-id'));
+                    });
+                });
+                
                 checkoutBtn.disabled = false;
             }
             
