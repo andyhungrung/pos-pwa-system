@@ -390,6 +390,8 @@
 
         // 頁面切換
         function showPage(pageName) {
+            console.log('正在切換到:', pageName);
+            
             // 隱藏所有頁面
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
@@ -401,20 +403,39 @@
             });
             
             // 顯示目標頁面
-            document.getElementById(pageName + 'Page').classList.add('active');
+            const targetPage = document.getElementById(pageName + 'Page');
+            if (targetPage) {
+                targetPage.classList.add('active');
+                console.log('頁面已切換:', pageName);
+            } else {
+                console.error('找不到頁面:', pageName + 'Page');
+            }
             
             // 更新當前按鈕狀態
-            document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+            const activeBtn = document.querySelector(`[data-page="${pageName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
             
             // 載入頁面資料
-            switch(pageName) {
-                case 'products':
-                    renderProductsTable();
-                    break;
-                case 'reports':
-                    updateReports();
-                    updateCharts();
-                    break;
+            try {
+                switch(pageName) {
+                    case 'products':
+                        console.log('渲染商品列表...');
+                        renderProductsTable();
+                        break;
+                    case 'reports':
+                        console.log('更新報表資料...');
+                        updateReports();
+                        // 使用 setTimeout 確保 DOM 已經渲染
+                        setTimeout(() => {
+                            console.log('更新圓餅圖...');
+                            updateCharts();
+                        }, 100);
+                        break;
+                }
+            } catch (error) {
+                console.error('載入頁面資料時發生錯誤:', error);
             }
         }
 
