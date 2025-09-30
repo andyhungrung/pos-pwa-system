@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -9,6 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.json" />
     <title>POS銷售系統</title>
+    
+    <!-- 引入 Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -88,6 +90,38 @@
         .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .stat-number { font-size: 24px; font-weight: bold; color: #2563eb; }
         .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        
+        /* 圓餅圖分析樣式 */
+        .charts-container { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+        @media (min-width: 1024px) { .charts-container { grid-template-columns: 1fr 1fr; } }
+        
+        .chart-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .chart-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .chart-title { font-size: 18px; font-weight: 700; color: #1f2937; }
+        .chart-subtitle { font-size: 14px; color: #6b7280; margin-top: 4px; }
+        
+        .chart-wrapper { position: relative; height: 300px; margin-bottom: 20px; }
+        
+        .chart-legend { display: grid; grid-template-columns: 1fr; gap: 8px; max-height: 200px; overflow-y: auto; }
+        .legend-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f9fafb; border-radius: 6px; font-size: 14px; }
+        .legend-color { width: 16px; height: 16px; border-radius: 4px; margin-right: 8px; }
+        .legend-info { display: flex; align-items: center; flex: 1; }
+        .legend-value { font-weight: 600; color: #374151; }
+        .legend-percentage { font-size: 12px; color: #6b7280; margin-left: 4px; }
+        
+        /* 空狀態樣式 */
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: #9ca3af; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state-text { font-size: 16px; font-weight: 500; }
+        .empty-state-subtext { font-size: 14px; margin-top: 4px; }
+        
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .chart-wrapper { height: 250px; }
+            .charts-container { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -164,11 +198,12 @@
                 </div>
             </div>
 
-            <!-- 報表頁面 -->
+            <!-- 報表頁面 (增強版) -->
             <div id="reportsPage" class="page">
                 <div class="page-content">
                     <h2 class="section-title">銷售報表</h2>
                     
+                    <!-- 統計卡片 -->
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div id="totalProducts" class="stat-number">0</div>
@@ -188,6 +223,46 @@
                         </div>
                     </div>
 
+                    <!-- 圓餅圖分析區域 -->
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">📊 商品銷售數量分析</div>
+                                    <div class="chart-subtitle">依銷售數量統計各商品占比</div>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="quantityChart"></canvas>
+                                <div id="quantityEmptyState" class="empty-state hidden">
+                                    <div class="empty-state-icon">📈</div>
+                                    <div class="empty-state-text">暫無銷售數據</div>
+                                    <div class="empty-state-subtext">完成首筆銷售後即可查看分析</div>
+                                </div>
+                            </div>
+                            <div id="quantityLegend" class="chart-legend"></div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div>
+                                    <div class="chart-title">💰 商品銷售金額分析</div>
+                                    <div class="chart-subtitle">依銷售金額統計各商品占比</div>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="revenueChart"></canvas>
+                                <div id="revenueEmptyState" class="empty-state hidden">
+                                    <div class="empty-state-icon">💸</div>
+                                    <div class="empty-state-text">暫無營收數據</div>
+                                    <div class="empty-state-subtext">完成首筆銷售後即可查看分析</div>
+                                </div>
+                            </div>
+                            <div id="revenueLegend" class="chart-legend"></div>
+                        </div>
+                    </div>
+
+                    <!-- 銷售記錄 -->
                     <div class="card">
                         <h3 style="font-weight: 600; margin-bottom: 16px;">銷售記錄</h3>
                         <div id="salesHistory" style="max-height: 300px; overflow-y: auto;">
@@ -256,6 +331,15 @@
         let cartTotal = 0;
         let sales = [];
         let editingProductId = null;
+        let quantityChart = null;
+        let revenueChart = null;
+
+        // 圖表顏色配置
+        const chartColors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+            '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
+            '#AED6F1', '#A9DFBF', '#F8C471', '#D7BDE2'
+        ];
 
         // IndexedDB 相關
         const DB_NAME = 'POSSystemDB';
@@ -327,6 +411,7 @@
                     break;
                 case 'reports':
                     updateReports();
+                    updateCharts();
                     break;
             }
         }
@@ -456,246 +541,3 @@
                     item.quantity = newQuantity;
                     updateCart();
                 }
-            }
-        }
-
-        function removeFromCart(productId) {
-            cart = cart.filter(item => item.id !== productId);
-            updateCart();
-        }
-
-        async function checkout() {
-            if (cart.length === 0) return;
-            
-            const sale = {
-                id: Date.now().toString(),
-                items: [...cart],
-                total: cartTotal,
-                timestamp: new Date().toISOString()
-            };
-            
-            await dbOperation(SALES_STORE, 'add', sale);
-            sales.push(sale);
-            
-            showAlert(`結帳成功！總金額：$${cartTotal}`);
-            cart = [];
-            updateCart();
-        }
-
-        // 商品管理
-        function showProductModal(product = null) {
-            editingProductId = product ? product.id : null;
-            document.getElementById('modalTitle').textContent = product ? '編輯商品' : '新增商品';
-            document.getElementById('modalProductName').value = product ? product.name : '';
-            document.getElementById('modalProductPrice').value = product ? product.price : '';
-            document.getElementById('productModal').classList.remove('hidden');
-        }
-
-        function closeProductModal() {
-            document.getElementById('productModal').classList.add('hidden');
-            editingProductId = null;
-        }
-
-        async function saveProduct() {
-            const name = document.getElementById('modalProductName').value.trim();
-            const price = parseFloat(document.getElementById('modalProductPrice').value);
-            
-            if (!name || !price) {
-                showAlert('請輸入商品名稱和價格');
-                return;
-            }
-            
-            const product = {
-                id: editingProductId || Date.now().toString(),
-                name: name,
-                price: price
-            };
-            
-            await dbOperation(PRODUCTS_STORE, 'put', product);
-            
-            if (editingProductId) {
-                const index = products.findIndex(p => p.id === editingProductId);
-                if (index !== -1) {
-                    products[index] = product;
-                }
-            } else {
-                products.push(product);
-            }
-            
-            renderProducts();
-            renderProductsTable();
-            closeProductModal();
-            showAlert(editingProductId ? '商品更新成功' : '商品新增成功');
-        }
-
-        function editProduct(id) {
-            const product = products.find(p => p.id === id);
-            if (product) {
-                showProductModal(product);
-            }
-        }
-
-        async function deleteProduct(id) {
-            if (!confirm('確定要刪除此商品嗎？')) return;
-            
-            await dbOperation(PRODUCTS_STORE, 'delete', id);
-            products = products.filter(p => p.id !== id);
-            renderProducts();
-            renderProductsTable();
-            showAlert('商品刪除成功');
-        }
-
-        // 手動新增商品
-        async function addManualProduct() {
-            const name = document.getElementById('productName').value.trim();
-            const price = parseFloat(document.getElementById('productPrice').value);
-            
-            if (!name || !price) {
-                showAlert('請輸入商品名稱和價格');
-                return;
-            }
-            
-            const product = {
-                id: Date.now().toString(),
-                name: name,
-                price: price
-            };
-            
-            await dbOperation(PRODUCTS_STORE, 'put', product);
-            products.push(product);
-            addToCart(product);
-            
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            
-            renderProducts();
-        }
-
-        // 報表功能
-        function updateReports() {
-            const totalProductsEl = document.getElementById('totalProducts');
-            const totalSalesEl = document.getElementById('totalSales');
-            const totalRevenueEl = document.getElementById('totalRevenue');
-            const avgOrderEl = document.getElementById('avgOrder');
-            const salesHistoryEl = document.getElementById('salesHistory');
-            
-            totalProductsEl.textContent = products.length;
-            totalSalesEl.textContent = sales.length;
-            
-            const revenue = sales.reduce((sum, sale) => sum + sale.total, 0);
-            totalRevenueEl.textContent = `$${revenue}`;
-            avgOrderEl.textContent = sales.length > 0 ? `$${Math.round(revenue / sales.length)}` : '$0';
-            
-            if (sales.length === 0) {
-                salesHistoryEl.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">暫無銷售記錄</p>';
-            } else {
-                salesHistoryEl.innerHTML = '';
-                sales.slice(0, 10).forEach(sale => {
-                    const saleDiv = document.createElement('div');
-                    saleDiv.style.cssText = 'padding: 12px; border-bottom: 1px solid #f3f4f6;';
-                    saleDiv.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <span style="font-size: 12px; color: #6b7280;">${new Date(sale.timestamp).toLocaleString('zh-TW')}</span>
-                            <span style="font-weight: 600;">$${sale.total}</span>
-                        </div>
-                        <div style="font-size: 12px; color: #6b7280;">
-                            ${sale.items.map(item => `${item.name}×${item.quantity}`).join(', ')}
-                        </div>
-                    `;
-                    salesHistoryEl.appendChild(saleDiv);
-                });
-            }
-        }
-
-        // 備份功能
-        function exportData() {
-            const data = {
-                products: products,
-                sales: sales,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `POS備份_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-showAlert('資料匯出成功！');
-        }
-
-        function importData() {
-            const fileInput = document.getElementById('importFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showAlert('請選擇要匯入的檔案');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (!confirm('匯入資料將覆蓋現有資料，確定要繼續嗎？')) return;
-                    
-                    // 匯入商品
-                    if (data.products) {
-                        for (const product of data.products) {
-                            await dbOperation(PRODUCTS_STORE, 'put', product);
-                        }
-                        products = data.products;
-                        renderProducts();
-                        renderProductsTable();
-                    }
-                    
-                    // 匯入銷售記錄
-                    if (data.sales) {
-                        for (const sale of data.sales) {
-                            await dbOperation(SALES_STORE, 'put', sale);
-                        }
-                        sales = data.sales;
-                    }
-                    
-                    fileInput.value = '';
-                    showAlert('資料匯入成功！');
-                    
-                } catch (error) {
-                    console.error('匯入失敗:', error);
-                    showAlert('匯入失敗，請檢查檔案格式');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // 初始化應用
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 載入資料
-            await loadProducts();
-            await loadSales();
-            
-            // 綁定事件
-            document.getElementById('addManualBtn').onclick = addManualProduct;
-            document.getElementById('checkoutBtn').onclick = checkout;
-            
-            console.log('POS系統初始化完成');
-        });
-
-        // Service Worker註冊
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async function() {
-                try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker註冊成功');
-                } catch (error) {
-                    console.error('Service Worker註冊失敗:', error);
-                }
-            });
-        }
-    </script>
-</body>
-</html>
