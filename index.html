@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json" />
     <title>POS銷售系統</title>
     
-    <!-- 引入 Chart.js -->
+    <!-- Chart.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     
     <style>
@@ -17,7 +17,6 @@
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f3f4f6; }
         .container { height: 100vh; display: flex; flex-direction: column; }
         
-        /* 頂部導航 */
         .header { background: white; padding: 16px; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .nav { display: flex; justify-content: space-between; align-items: center; }
         .title { font-size: 24px; font-weight: bold; color: #1f2937; }
@@ -27,12 +26,10 @@
         .nav-btn:not(.active) { background: #e5e7eb; color: #374151; }
         .nav-btn:hover:not(.active) { background: #d1d5db; }
         
-        /* 主要內容 */
         .main { flex: 1; overflow: hidden; }
         .page { display: none; height: 100%; }
         .page.active { display: flex; flex-direction: column; }
         
-        /* 共用樣式 */
         .page-content { flex: 1; padding: 16px; overflow-y: auto; }
         .section-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
         .card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 16px; }
@@ -48,7 +45,6 @@
         .button-gray { background: #6b7280; }
         .button-gray:hover { background: #4b5563; }
         
-        /* 銷售頁面樣式 */
         .sales-layout { flex: 1; display: flex; flex-direction: column; }
         @media (min-width: 769px) { .sales-layout { flex-direction: row; } }
         
@@ -74,24 +70,20 @@
         .cart-controls { display: flex; gap: 4px; align-items: center; }
         .control-btn { width: 28px; height: 28px; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
         
-        /* 表格樣式 */
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         .table th { background: #f9fafb; font-weight: 600; }
         
-        /* 模態框 */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
         .modal-content { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; }
         .hidden { display: none; }
         
-        /* 統計卡片 */
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
         @media (min-width: 769px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .stat-number { font-size: 24px; font-weight: bold; color: #2563eb; }
         .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
         
-        /* 圓餅圖分析樣式 */
         .charts-container { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
         @media (min-width: 1024px) { .charts-container { grid-template-columns: 1fr 1fr; } }
         
@@ -111,13 +103,11 @@
         .legend-value { font-weight: 600; color: #374151; }
         .legend-percentage { font-size: 12px; color: #6b7280; margin-left: 4px; }
         
-        /* 空狀態樣式 */
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: #9ca3af; }
         .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
         .empty-state-text { font-size: 16px; font-weight: 500; }
         .empty-state-subtext { font-size: 14px; margin-top: 4px; }
         
-        /* 響應式調整 */
         @media (max-width: 768px) {
             .chart-wrapper { height: 250px; }
             .charts-container { grid-template-columns: 1fr; }
@@ -126,21 +116,19 @@
 </head>
 <body>
     <div id="app" class="container">
-        <!-- 頂部導航 -->
         <div class="header">
             <div class="nav">
                 <h1 class="title">POS銷售系統</h1>
                 <div class="nav-buttons">
-                    <button class="nav-btn active" onclick="window.showPage('sales')">銷售</button>
-                    <button class="nav-btn" onclick="window.showPage('products')">商品</button>
-                    <button class="nav-btn" onclick="window.showPage('reports')">報表</button>
-                    <button class="nav-btn" onclick="window.showPage('backup')">備份</button>
+                    <button class="nav-btn active" onclick="APP.showPage('sales')">銷售</button>
+                    <button class="nav-btn" onclick="APP.showPage('products')">商品</button>
+                    <button class="nav-btn" onclick="APP.showPage('reports')">報表</button>
+                    <button class="nav-btn" onclick="APP.showPage('backup')">備份</button>
                 </div>
             </div>
         </div>
 
         <div class="main">
-            <!-- 銷售頁面 -->
             <div id="salesPage" class="page active">
                 <div class="sales-layout">
                     <div class="products-area">
@@ -151,7 +139,7 @@
                             <div class="input-group">
                                 <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex: 1;">
                                 <input id="productPrice" type="number" class="input" placeholder="價格" step="0.01" style="width: 120px;">
-                                <button onclick="window.addManualProduct()" class="button button-green">新增</button>
+                                <button onclick="APP.addManualProduct()" class="button button-green">新增</button>
                             </div>
                         </div>
                         
@@ -168,18 +156,17 @@
                         </div>
                         <div style="padding-top: 12px; border-top: 1px solid #e5e7eb;">
                             <div id="totalAmount" style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">總計: $0</div>
-                            <button onclick="window.checkout()" class="button" style="width: 100%;" id="checkoutBtn" disabled>結帳</button>
+                            <button onclick="APP.checkout()" class="button" style="width: 100%;" id="checkoutBtn" disabled>結帳</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 商品管理頁面 -->
             <div id="productsPage" class="page">
                 <div class="page-content">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 class="section-title" style="margin: 0;">商品管理</h2>
-                        <button class="button button-green" onclick="window.showProductModal()">新增商品</button>
+                        <button class="button button-green" onclick="APP.showProductModal()">新增商品</button>
                     </div>
                     
                     <div class="card">
@@ -198,12 +185,10 @@
                 </div>
             </div>
 
-            <!-- 報表頁面 (增強版) -->
             <div id="reportsPage" class="page">
                 <div class="page-content">
                     <h2 class="section-title">銷售報表</h2>
                     
-                    <!-- 統計卡片 -->
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div id="totalProducts" class="stat-number">0</div>
@@ -223,7 +208,6 @@
                         </div>
                     </div>
 
-                    <!-- 圓餅圖分析區域 -->
                     <div class="charts-container">
                         <div class="chart-card">
                             <div class="chart-header">
@@ -262,7 +246,6 @@
                         </div>
                     </div>
 
-                    <!-- 銷售記錄 -->
                     <div class="card">
                         <h3 style="font-weight: 600; margin-bottom: 16px;">銷售記錄</h3>
                         <div id="salesHistory" style="max-height: 300px; overflow-y: auto;">
@@ -272,7 +255,6 @@
                 </div>
             </div>
 
-            <!-- 備份頁面 -->
             <div id="backupPage" class="page">
                 <div class="page-content">
                     <h2 class="section-title">資料備份與還原</h2>
@@ -281,14 +263,14 @@
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">備份資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">將所有商品和銷售資料匯出為檔案</p>
-                            <button class="button" onclick="window.exportData()">匯出資料</button>
+                            <button class="button" onclick="APP.exportData()">匯出資料</button>
                         </div>
                         
                         <div class="card">
                             <h3 style="font-weight: 600; margin-bottom: 12px;">還原資料</h3>
                             <p style="color: #6b7280; margin-bottom: 16px;">從備份檔案還原資料</p>
                             <input type="file" id="importFile" accept=".json" style="margin-bottom: 12px;">
-                            <button class="button button-gray" onclick="window.importData()">匯入資料</button>
+                            <button class="button button-gray" onclick="APP.importData()">匯入資料</button>
                         </div>
                     </div>
                 </div>
@@ -296,7 +278,6 @@
         </div>
     </div>
 
-    <!-- 商品編輯模態框 -->
     <div id="productModal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modalTitle" style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">新增商品</h3>
@@ -309,282 +290,652 @@
                 <input id="modalProductPrice" type="number" class="input" step="0.01">
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="button" onclick="window.saveProduct()">儲存</button>
-                <button class="button button-gray" onclick="window.closeProductModal()">取消</button>
+                <button class="button" onclick="APP.saveProduct()">儲存</button>
+                <button class="button button-gray" onclick="APP.closeProductModal()">取消</button>
             </div>
         </div>
     </div>
 
-    <!-- 提示對話框 -->
     <div id="alertModal" class="modal hidden">
         <div class="modal-content">
             <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">提示訊息</h3>
             <p id="alertMessage" style="color: #6b7280; margin-bottom: 16px;"></p>
-            <button class="button" onclick="window.closeAlert()">確定</button>
+            <button class="button" onclick="APP.closeAlert()">確定</button>
         </div>
     </div>
 
     <script>
-        // 全域變數
-        let products = [];
-        let cart = [];
-        let cartTotal = 0;
-        let sales = [];
-        let editingProductId = null;
-        let quantityChart = null;
-        let revenueChart = null;
+        const APP = (function() {
+            let products = [];
+            let cart = [];
+            let cartTotal = 0;
+            let sales = [];
+            let editingProductId = null;
+            let quantityChart = null;
+            let revenueChart = null;
 
-        // 圖表顏色配置
-        const chartColors = [
-            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
-            '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-            '#AED6F1', '#A9DFBF', '#F8C471', '#D7BDE2'
-        ];
+            const chartColors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+                '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
+                '#AED6F1', '#A9DFBF', '#F8C471', '#D7BDE2'
+            ];
 
-        // IndexedDB 相關
-        const DB_NAME = 'POSSystemDB';
-        const DB_VERSION = 2;
-        const PRODUCTS_STORE = 'products';
-        const SALES_STORE = 'sales';
+            const DB_NAME = 'POSSystemDB';
+            const DB_VERSION = 2;
+            const PRODUCTS_STORE = 'products';
+            const SALES_STORE = 'sales';
 
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(PRODUCTS_STORE)) {
-                        db.createObjectStore(PRODUCTS_STORE, { keyPath: 'id' });
+            function initDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(DB_NAME, DB_VERSION);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(PRODUCTS_STORE)) {
+                            db.createObjectStore(PRODUCTS_STORE, { keyPath: 'id' });
+                        }
+                        if (!db.objectStoreNames.contains(SALES_STORE)) {
+                            db.createObjectStore(SALES_STORE, { keyPath: 'id' });
+                        }
+                    };
+                });
+            }
+
+            async function dbOperation(storeName, operation, data = null) {
+                try {
+                    const db = await initDB();
+                    const transaction = db.transaction([storeName], operation === 'getAll' ? 'readonly' : 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    let request;
+                    
+                    switch (operation) {
+                        case 'add': request = store.add(data); break;
+                        case 'put': request = store.put(data); break;
+                        case 'delete': request = store.delete(data); break;
+                        case 'getAll': request = store.getAll(); break;
                     }
-                    if (!db.objectStoreNames.contains(SALES_STORE)) {
-                        db.createObjectStore(SALES_STORE, { keyPath: 'id' });
-                    }
-                };
-            });
-        }
+                    
+                    return new Promise((resolve, reject) => {
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                    });
+                } catch (error) {
+                    console.error('DB操作失敗:', error);
+                    return null;
+                }
+            }
 
-        async function dbOperation(storeName, operation, data = null) {
-            try {
-                const db = await initDB();
-                const transaction = db.transaction([storeName], operation === 'getAll' ? 'readonly' : 'readwrite');
-                const store = transaction.objectStore(storeName);
-                let request;
+            function showPage(pageName) {
+                console.log('切換到:', pageName);
                 
-                switch (operation) {
-                    case 'add': request = store.add(data); break;
-                    case 'put': request = store.put(data); break;
-                    case 'delete': request = store.delete(data); break;
-                    case 'getAll': request = store.getAll(); break;
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                const targetPage = document.getElementById(pageName + 'Page');
+                if (targetPage) {
+                    targetPage.classList.add('active');
                 }
                 
-                return new Promise((resolve, reject) => {
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-            } catch (error) {
-                console.error('DB操作失敗:', error);
-                return null;
-            }
-        }
-
-        // 頁面切換 - 必須定義在全域
-        window.showPage = function(pageName) {
-            console.log('正在切換到:', pageName);
-            
-            // 隱藏所有頁面
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // 更新導航按鈕
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // 顯示目標頁面
-            const targetPage = document.getElementById(pageName + 'Page');
-            if (targetPage) {
-                targetPage.classList.add('active');
-                console.log('頁面已切換:', pageName);
-            } else {
-                console.error('找不到頁面:', pageName + 'Page');
-            }
-            
-            // 更新當前按鈕狀態
-            const activeBtn = document.querySelector(`[data-page="${pageName}"]`);
-            if (activeBtn) {
-                activeBtn.classList.add('active');
-            }
-            
-            // 載入頁面資料
-            try {
+                const clickedBtn = event ? event.target : null;
+                if (clickedBtn) {
+                    clickedBtn.classList.add('active');
+                } else {
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        if (btn.textContent.includes(pageName === 'sales' ? '銷售' : pageName === 'products' ? '商品' : pageName === 'reports' ? '報表' : '備份')) {
+                            btn.classList.add('active');
+                        }
+                    });
+                }
+                
                 switch(pageName) {
                     case 'products':
-                        console.log('渲染商品列表...');
                         renderProductsTable();
                         break;
                     case 'reports':
-                        console.log('更新報表資料...');
                         updateReports();
-                        // 使用 setTimeout 確保 DOM 已經渲染
-                        setTimeout(() => {
-                            console.log('更新圓餅圖...');
-                            updateCharts();
-                        }, 100);
+                        setTimeout(() => updateCharts(), 100);
                         break;
                 }
-            } catch (error) {
-                console.error('載入頁面資料時發生錯誤:', error);
             }
-        };
 
-        // 提示功能
-        window.showAlert = function(message) {
-            document.getElementById('alertMessage').textContent = message;
-            document.getElementById('alertModal').classList.remove('hidden');
-        };
-
-        window.closeAlert = function() {
-            document.getElementById('alertModal').classList.add('hidden');
-        };
-
-        // 載入資料
-        async function loadProducts() {
-            const allProducts = await dbOperation(PRODUCTS_STORE, 'getAll');
-            products = allProducts || [];
-            renderProducts();
-        }
-
-        async function loadSales() {
-            const allSales = await dbOperation(SALES_STORE, 'getAll');
-            sales = allSales || [];
-        }
-
-        // 渲染商品網格
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            grid.innerHTML = '';
-            
-            products.forEach(product => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
-                    <div style="font-weight: 500; margin-bottom: 4px;">${product.name}</div>
-                    <div style="color: #2563eb; font-weight: bold;">$${product.price}</div>
-                `;
-                card.onclick = () => addToCart(product);
-                grid.appendChild(card);
-            });
-        }
-
-        // 渲染商品管理表格
-        function renderProductsTable() {
-            const tbody = document.getElementById('productsTableBody');
-            tbody.innerHTML = '';
-            
-            if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6b7280; padding: 40px;">暫無商品資料</td></tr>';
-                return;
+            function showAlert(message) {
+                document.getElementById('alertMessage').textContent = message;
+                document.getElementById('alertModal').classList.remove('hidden');
             }
-            
-            products.forEach(product => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>${product.price}</td>
-                    <td>
-                        <button class="button edit-product-btn" data-id="${product.id}" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;">編輯</button>
-                        <button class="button button-red delete-product-btn" data-id="${product.id}" style="padding: 6px 12px; font-size: 12px;">刪除</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
 
-        // 購物車功能
-        function addToCart(product) {
-            const existingItem = cart.find(item => item.id === product.id);
-            if (existingItem) {
-                existingItem.quantity += 1;
-            } else {
-                cart.push({ ...product, quantity: 1 });
+            function closeAlert() {
+                document.getElementById('alertModal').classList.add('hidden');
             }
-            updateCart();
-        }
 
-        function updateCart() {
-            const cartItemsDiv = document.getElementById('cartItems');
-            const totalDiv = document.getElementById('totalAmount');
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            
-            if (cart.length === 0) {
-                cartItemsDiv.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280;">
-                        <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
-                        <p>購物車是空的</p>
-                    </div>
-                `;
-                checkoutBtn.disabled = true;
-                cartTotal = 0;
-            } else {
-                cartItemsDiv.innerHTML = '';
-                cartTotal = 0;
+            async function loadProducts() {
+                const allProducts = await dbOperation(PRODUCTS_STORE, 'getAll');
+                products = allProducts || [];
+                renderProducts();
+            }
+
+            async function loadSales() {
+                const allSales = await dbOperation(SALES_STORE, 'getAll');
+                sales = allSales || [];
+            }
+
+            function renderProducts() {
+                const grid = document.getElementById('productGrid');
+                grid.innerHTML = '';
                 
-                cart.forEach(item => {
-                    cartTotal += item.price * item.quantity;
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'cart-item';
-                    itemDiv.innerHTML = `
-                        <div style="flex: 1;">
-                            <div style="font-weight: 500; font-size: 14px;">${item.name}</div>
-                            <div style="font-size: 12px; color: #6b7280;">${item.price} × ${item.quantity}</div>
-                        </div>
-                        <div class="cart-controls">
-                            <button class="control-btn cart-decrease" data-id="${item.id}" data-qty="${item.quantity}">-</button>
-                            <span style="width: 32px; text-align: center; font-size: 14px;">${item.quantity}</span>
-                            <button class="control-btn cart-increase" data-id="${item.id}" data-qty="${item.quantity}">+</button>
-                            <button class="control-btn cart-remove" data-id="${item.id}" style="background: #fef2f2; color: #dc2626;">×</button>
+                products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <div style="font-weight: 500; margin-bottom: 4px;">${product.name}</div>
+                        <div style="color: #2563eb; font-weight: bold;">$${product.price}</div>
+                    `;
+                    card.onclick = () => addToCart(product);
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderProductsTable() {
+                const tbody = document.getElementById('productsTableBody');
+                tbody.innerHTML = '';
+                
+                if (products.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6b7280; padding: 40px;">暫無商品資料</td></tr>';
+                    return;
+                }
+                
+                products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${product.name}</td>
+                        <td>$${product.price}</td>
+                        <td>
+                            <button class="button" onclick="APP.editProduct('${product.id}')" style="padding: 6px 12px; font-size: 12px; margin-right: 8px;">編輯</button>
+                            <button class="button button-red" onclick="APP.deleteProduct('${product.id}')" style="padding: 6px 12px; font-size: 12px;">刪除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            function addToCart(product) {
+                const existingItem = cart.find(item => item.id === product.id);
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.push({ ...product, quantity: 1 });
+                }
+                updateCart();
+            }
+
+            function updateCart() {
+                const cartItemsDiv = document.getElementById('cartItems');
+                const totalDiv = document.getElementById('totalAmount');
+                const checkoutBtn = document.getElementById('checkoutBtn');
+                
+                if (cart.length === 0) {
+                    cartItemsDiv.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280;">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
+                            <p>購物車是空的</p>
                         </div>
                     `;
-                    cartItemsDiv.appendChild(itemDiv);
-                });
-                
-                // 綁定購物車按鈕事件
-                cartItemsDiv.querySelectorAll('.cart-decrease').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        const qty = parseInt(this.getAttribute('data-qty'));
-                        updateQuantity(id, qty - 1);
+                    checkoutBtn.disabled = true;
+                    cartTotal = 0;
+                } else {
+                    cartItemsDiv.innerHTML = '';
+                    cartTotal = 0;
+                    
+                    cart.forEach(item => {
+                        cartTotal += item.price * item.quantity;
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'cart-item';
+                        itemDiv.innerHTML = `
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; font-size: 14px;">${item.name}</div>
+                                <div style="font-size: 12px; color: #6b7280;">$${item.price} × ${item.quantity}</div>
+                            </div>
+                            <div class="cart-controls">
+                                <button class="control-btn" onclick="APP.updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                                <span style="width: 32px; text-align: center; font-size: 14px;">${item.quantity}</span>
+                                <button class="control-btn" onclick="APP.updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                                <button class="control-btn" onclick="APP.removeFromCart('${item.id}')" style="background: #fef2f2; color: #dc2626;">×</button>
+                            </div>
+                        `;
+                        cartItemsDiv.appendChild(itemDiv);
                     });
-                });
-                
-                cartItemsDiv.querySelectorAll('.cart-increase').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        const qty = parseInt(this.getAttribute('data-qty'));
-                        updateQuantity(id, qty + 1);
-                    });
-                });
-                
-                cartItemsDiv.querySelectorAll('.cart-remove').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        removeFromCart(this.getAttribute('data-id'));
-                    });
-                });
-                
-                checkoutBtn.disabled = false;
-            }
-            
-            totalDiv.textContent = `總計: $${cartTotal}`;
-        }
-
-        function updateQuantity(productId, newQuantity) {
-            if (newQuantity <= 0) {
-                removeFromCart(productId);
-            } else {
-                const item = cart.find(item => item.id === productId);
-                if (item) {
-                    item.quantity = newQuantity;
-                    updateCart();
+                    checkoutBtn.disabled = false;
                 }
+                
+                totalDiv.textContent = `總計: $${cartTotal}`;
+            }
+
+            function updateQuantity(productId, newQuantity) {
+                if (newQuantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    const item = cart.find(item => item.id === productId);
+                    if (item) {
+                        item.quantity = newQuantity;
+                        updateCart();
+                    }
+                }
+            }
+
+            function removeFromCart(productId) {
+                cart = cart.filter(item => item.id !== productId);
+                updateCart();
+            }
+
+            async function checkout() {
+                if (cart.length === 0) return;
+                
+                const sale = {
+                    id: Date.now().toString(),
+                    items: [...cart],
+                    total: cartTotal,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await dbOperation(SALES_STORE, 'add', sale);
+                sales.push(sale);
+                
+                showAlert(`結帳成功！總金額：${cartTotal}`);
+                cart = [];
+                updateCart();
+            }
+
+            function showProductModal(product = null) {
+                editingProductId = product ? product.id : null;
+                document.getElementById('modalTitle').textContent = product ? '編輯商品' : '新增商品';
+                document.getElementById('modalProductName').value = product ? product.name : '';
+                document.getElementById('modalProductPrice').value = product ? product.price : '';
+                document.getElementById('productModal').classList.remove('hidden');
+            }
+
+            function closeProductModal() {
+                document.getElementById('productModal').classList.add('hidden');
+                editingProductId = null;
+            }
+
+            async function saveProduct() {
+                const name = document.getElementById('modalProductName').value.trim();
+                const price = parseFloat(document.getElementById('modalProductPrice').value);
+                
+                if (!name || !price) {
+                    showAlert('請輸入商品名稱和價格');
+                    return;
+                }
+                
+                const product = {
+                    id: editingProductId || Date.now().toString(),
+                    name: name,
+                    price: price
+                };
+                
+                await dbOperation(PRODUCTS_STORE, 'put', product);
+                
+                if (editingProductId) {
+                    const index = products.findIndex(p => p.id === editingProductId);
+                    if (index !== -1) {
+                        products[index] = product;
+                    }
+                } else {
+                    products.push(product);
+                }
+                
+                renderProducts();
+                renderProductsTable();
+                closeProductModal();
+                showAlert(editingProductId ? '商品更新成功' : '商品新增成功');
+            }
+
+            function editProduct(id) {
+                const product = products.find(p => p.id === id);
+                if (product) {
+                    showProductModal(product);
+                }
+            }
+
+            async function deleteProduct(id) {
+                if (!confirm('確定要刪除此商品嗎？')) return;
+                
+                await dbOperation(PRODUCTS_STORE, 'delete', id);
+                products = products.filter(p => p.id !== id);
+                renderProducts();
+                renderProductsTable();
+                showAlert('商品刪除成功');
+            }
+
+            async function addManualProduct() {
+                console.log('快速新增商品');
+                const name = document.getElementById('productName').value.trim();
+                const price = parseFloat(document.getElementById('productPrice').value);
+                
+                if (!name || !price) {
+                    showAlert('請輸入商品名稱和價格');
+                    return;
+                }
+                
+                const product = {
+                    id: Date.now().toString(),
+                    name: name,
+                    price: price
+                };
+                
+                await dbOperation(PRODUCTS_STORE, 'put', product);
+                products.push(product);
+                addToCart(product);
+                
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                
+                renderProducts();
+            }
+
+            function createPieChart(canvasId, data, labels, colors) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                
+                return new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                            hoverBorderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: '#2563eb',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label;
+                                        const value = context.formattedValue;
+                                        const percentage = ((context.parsed / context.dataset.data.reduce((a, b) => a + b)) * 100).toFixed(1);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            duration: 1500
+                        }
+                    }
+                });
+            }
+
+            function updateChartLegend(legendId, data, labels, colors, isRevenue = false) {
+                const legend = document.getElementById(legendId);
+                const total = data.reduce((sum, value) => sum + value, 0);
+                
+                legend.innerHTML = '';
+                
+                data.forEach((value, index) => {
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+                    legendItem.innerHTML = `
+                        <div class="legend-info">
+                            <div class="legend-color" style="background-color: ${colors[index]}"></div>
+                            <span>${labels[index]}</span>
+                        </div>
+                        <div>
+                            <span class="legend-value">${isRevenue ? ' + value.toLocaleString() : value.toLocaleString()}</span>
+                            <span class="legend-percentage">(${percentage}%)</span>
+                        </div>
+                    `;
+                    legend.appendChild(legendItem);
+                });
+            }
+
+            function updateCharts() {
+                console.log('更新圓餅圖');
+                
+                if (quantityChart) {
+                    quantityChart.destroy();
+                    quantityChart = null;
+                }
+                if (revenueChart) {
+                    revenueChart.destroy();
+                    revenueChart = null;
+                }
+                
+                const productStats = {};
+                
+                sales.forEach(sale => {
+                    sale.items.forEach(item => {
+                        if (!productStats[item.name]) {
+                            productStats[item.name] = {
+                                quantity: 0,
+                                revenue: 0
+                            };
+                        }
+                        productStats[item.name].quantity += item.quantity;
+                        productStats[item.name].revenue += item.quantity * item.price;
+                    });
+                });
+                
+                const productNames = Object.keys(productStats);
+                
+                if (productNames.length === 0) {
+                    document.getElementById('quantityEmptyState').classList.remove('hidden');
+                    document.getElementById('revenueEmptyState').classList.remove('hidden');
+                    document.getElementById('quantityChart').style.display = 'none';
+                    document.getElementById('revenueChart').style.display = 'none';
+                    document.getElementById('quantityLegend').innerHTML = '';
+                    document.getElementById('revenueLegend').innerHTML = '';
+                    return;
+                }
+                
+                document.getElementById('quantityEmptyState').classList.add('hidden');
+                document.getElementById('revenueEmptyState').classList.add('hidden');
+                document.getElementById('quantityChart').style.display = 'block';
+                document.getElementById('revenueChart').style.display = 'block';
+                
+                const quantities = productNames.map(name => productStats[name].quantity);
+                const revenues = productNames.map(name => productStats[name].revenue);
+                const colors = productNames.map((_, index) => chartColors[index % chartColors.length]);
+                
+                const quantitySorted = productNames
+                    .map((name, index) => ({ name, quantity: quantities[index], color: colors[index] }))
+                    .sort((a, b) => b.quantity - a.quantity);
+                
+                const revenueSorted = productNames
+                    .map((name, index) => ({ name, revenue: revenues[index], color: colors[index] }))
+                    .sort((a, b) => b.revenue - a.revenue);
+                
+                quantityChart = createPieChart(
+                    'quantityChart',
+                    quantitySorted.map(item => item.quantity),
+                    quantitySorted.map(item => item.name),
+                    quantitySorted.map(item => item.color)
+                );
+                
+                revenueChart = createPieChart(
+                    'revenueChart',
+                    revenueSorted.map(item => item.revenue),
+                    revenueSorted.map(item => item.name),
+                    revenueSorted.map(item => item.color)
+                );
+                
+                updateChartLegend(
+                    'quantityLegend',
+                    quantitySorted.map(item => item.quantity),
+                    quantitySorted.map(item => item.name),
+                    quantitySorted.map(item => item.color)
+                );
+                
+                updateChartLegend(
+                    'revenueLegend',
+                    revenueSorted.map(item => item.revenue),
+                    revenueSorted.map(item => item.name),
+                    revenueSorted.map(item => item.color),
+                    true
+                );
+            }
+
+            function updateReports() {
+                const totalProductsEl = document.getElementById('totalProducts');
+                const totalSalesEl = document.getElementById('totalSales');
+                const totalRevenueEl = document.getElementById('totalRevenue');
+                const avgOrderEl = document.getElementById('avgOrder');
+                const salesHistoryEl = document.getElementById('salesHistory');
+                
+                totalProductsEl.textContent = products.length;
+                totalSalesEl.textContent = sales.length;
+                
+                const revenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+                totalRevenueEl.textContent = `${revenue.toLocaleString()}`;
+                avgOrderEl.textContent = sales.length > 0 ? `${Math.round(revenue / sales.length)}` : '$0';
+                
+                if (sales.length === 0) {
+                    salesHistoryEl.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">暫無銷售記錄</p>';
+                } else {
+                    salesHistoryEl.innerHTML = '';
+                    sales.slice(-10).reverse().forEach(sale => {
+                        const saleDiv = document.createElement('div');
+                        saleDiv.style.cssText = 'padding: 12px; border-bottom: 1px solid #f3f4f6;';
+                        saleDiv.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 12px; color: #6b7280;">${new Date(sale.timestamp).toLocaleString('zh-TW')}</span>
+                                <span style="font-weight: 600;">${sale.total}</span>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">
+                                ${sale.items.map(item => `${item.name}×${item.quantity}`).join(', ')}
+                            </div>
+                        `;
+                        salesHistoryEl.appendChild(saleDiv);
+                    });
+                }
+            }
+
+            function exportData() {
+                const data = {
+                    products: products,
+                    sales: sales,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `POS備份_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showAlert('資料匯出成功！');
+            }
+
+            function importData() {
+                const fileInput = document.getElementById('importFile');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    showAlert('請選擇要匯入的檔案');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (!confirm('匯入資料將覆蓋現有資料，確定要繼續嗎？')) return;
+                        
+                        if (data.products) {
+                            for (const product of data.products) {
+                                await dbOperation(PRODUCTS_STORE, 'put', product);
+                            }
+                            products = data.products;
+                            renderProducts();
+                            renderProductsTable();
+                        }
+                        
+                        if (data.sales) {
+                            for (const sale of data.sales) {
+                                await dbOperation(SALES_STORE, 'put', sale);
+                            }
+                            sales = data.sales;
+                        }
+                        
+                        fileInput.value = '';
+                        showAlert('資料匯入成功！');
+                        
+                    } catch (error) {
+                        console.error('匯入失敗:', error);
+                        showAlert('匯入失敗，請檢查檔案格式');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            async function init() {
+                console.log('開始初始化 POS 系統...');
+                await loadProducts();
+                await loadSales();
+                console.log('已載入商品數量:', products.length);
+                console.log('已載入銷售記錄:', sales.length);
+                console.log('POS系統初始化完成 ✓');
+            }
+
+            return {
+                showPage,
+                showAlert,
+                closeAlert,
+                addManualProduct,
+                checkout,
+                showProductModal,
+                closeProductModal,
+                saveProduct,
+                editProduct,
+                deleteProduct,
+                updateQuantity,
+                removeFromCart,
+                exportData,
+                importData,
+                init
+            };
+        })();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            APP.init();
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async function() {
+                try {
+                    const response = await fetch('./sw.js', { method: 'HEAD' }).catch(() => null);
+                    if (response && response.ok) {
+                        await navigator.serviceWorker.register('./sw.js');
+                        console.log('Service Worker註冊成功');
+                    }
+                } catch (error) {
+                    console.log('Service Worker 不可用');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
