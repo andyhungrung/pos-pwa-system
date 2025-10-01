@@ -13,7 +13,7 @@
         .nav { display: flex; justify-content: space-between; align-items: center; }
         .title { font-size: 24px; font-weight: bold; color: #1f2937; }
         .nav-buttons { display: flex; gap: 8px; }
-        .nav-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .nav-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; }
         .nav-btn.active { background: #2563eb; color: white; }
         .nav-btn:not(.active) { background: #e5e7eb; color: #374151; }
         .main { flex: 1; overflow: hidden; }
@@ -35,11 +35,11 @@
         @media (min-width: 769px) { .cart-area { width: 320px; border-top: none; border-left: 1px solid #e5e7eb; } }
         .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         @media (min-width: 769px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
-        .product-card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
-        .product-card:hover { border: 2px solid #60a5fa; }
+        .product-card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; border: 2px solid transparent; }
+        .product-card:hover { border-color: #60a5fa; }
         .cart-items { flex: 1; overflow-y: auto; margin-bottom: 12px; }
         .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .control-btn { width: 28px; height: 28px; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; }
+        .control-btn { width: 28px; height: 28px; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
         .table th { background: #f9fafb; font-weight: 600; }
@@ -56,14 +56,14 @@
         .chart-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .chart-wrapper { height: 300px; margin: 20px 0; }
         .chart-legend { display: grid; gap: 8px; max-height: 200px; overflow-y: auto; }
-        .legend-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #f9fafb; border-radius: 6px; }
+        .legend-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #f9fafb; border-radius: 6px; font-size: 14px; }
         .legend-color { width: 16px; height: 16px; border-radius: 4px; margin-right: 8px; display: inline-block; }
     </style>
 </head>
 <body>
+
 <script>
-// 定義 POS 系統 - 必須在 HTML 之前
-window.POS = {
+var POS = {
     data: {
         products: [],
         cart: [],
@@ -73,13 +73,13 @@ window.POS = {
     },
     
     db: {
-        async init() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('POSSystemDB', 2);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
+        init: function() {
+            return new Promise(function(resolve, reject) {
+                var request = indexedDB.open('POSSystemDB', 2);
+                request.onerror = function() { reject(request.error); };
+                request.onsuccess = function() { resolve(request.result); };
+                request.onupgradeneeded = function(e) {
+                    var db = e.target.result;
                     if (!db.objectStoreNames.contains('products')) {
                         db.createObjectStore('products', { keyPath: 'id' });
                     }
@@ -90,71 +90,84 @@ window.POS = {
             });
         },
         
-        async operate(store, operation, data = null) {
-            try {
-                const db = await this.init();
-                const tx = db.transaction([store], operation === 'getAll' ? 'readonly' : 'readwrite');
-                const objectStore = tx.objectStore(store);
-                let request;
+        operate: function(store, operation, data) {
+            return this.init().then(function(db) {
+                var tx = db.transaction([store], operation === 'getAll' ? 'readonly' : 'readwrite');
+                var objectStore = tx.objectStore(store);
+                var request;
                 
                 if (operation === 'add') request = objectStore.add(data);
                 else if (operation === 'put') request = objectStore.put(data);
                 else if (operation === 'delete') request = objectStore.delete(data);
                 else if (operation === 'getAll') request = objectStore.getAll();
                 
-                return new Promise((resolve, reject) => {
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
+                return new Promise(function(resolve, reject) {
+                    request.onsuccess = function() { resolve(request.result); };
+                    request.onerror = function() { reject(request.error); };
                 });
-            } catch (error) {
+            }).catch(function(error) {
                 console.error('DB錯誤:', error);
                 return null;
-            }
+            });
         }
     },
     
-    async loadProducts() {
-        const products = await this.db.operate('products', 'getAll');
-        this.data.products = products || [];
-        this.renderProducts();
+    loadProducts: function() {
+        var self = this;
+        return this.db.operate('products', 'getAll').then(function(products) {
+            self.data.products = products || [];
+            self.renderProducts();
+        });
     },
     
-    async loadSales() {
-        const sales = await this.db.operate('sales', 'getAll');
-        this.data.sales = sales || [];
+    loadSales: function() {
+        var self = this;
+        return this.db.operate('sales', 'getAll').then(function(sales) {
+            self.data.sales = sales || [];
+        });
     },
     
-    renderProducts() {
-        const grid = document.getElementById('productGrid');
+    renderProducts: function() {
+        var grid = document.getElementById('productGrid');
         if (!grid) return;
         grid.innerHTML = '';
         
-        this.data.products.forEach(product => {
-            const card = document.createElement('div');
+        var self = this;
+        this.data.products.forEach(function(product) {
+            var card = document.createElement('div');
             card.className = 'product-card';
-            card.innerHTML = `
-                <div style="font-weight: 500;">${product.name}</div>
-                <div style="color: #2563eb; font-weight: bold;">$${product.price}</div>
-            `;
-            card.onclick = () => this.addToCart(product);
+            card.innerHTML = '<div style="font-weight:500;">' + product.name + '</div><div style="color:#2563eb;font-weight:bold;">$' + product.price + '</div>';
+            card.onclick = function() { self.addToCart(product); };
             grid.appendChild(card);
         });
     },
     
-    addToCart(product) {
-        const existing = this.data.cart.find(item => item.id === product.id);
+    addToCart: function(product) {
+        var existing = null;
+        for (var i = 0; i < this.data.cart.length; i++) {
+            if (this.data.cart[i].id === product.id) {
+                existing = this.data.cart[i];
+                break;
+            }
+        }
+        
         if (existing) {
             existing.quantity += 1;
         } else {
-            this.data.cart.push({ ...product, quantity: 1 });
+            this.data.cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1
+            });
         }
         this.updateCart();
     },
     
-    updateCart() {
-        const container = document.getElementById('cartItems');
-        const totalEl = document.getElementById('totalAmount');
-        const btn = document.getElementById('checkoutBtn');
+    updateCart: function() {
+        var container = document.getElementById('cartItems');
+        var totalEl = document.getElementById('totalAmount');
+        var btn = document.getElementById('checkoutBtn');
         
         if (this.data.cart.length === 0) {
             container.innerHTML = '<div style="text-align:center;color:#6b7280;padding:40px;">🛒<br>購物車是空的</div>';
@@ -163,112 +176,115 @@ window.POS = {
             return;
         }
         
-        let total = 0;
+        var total = 0;
         container.innerHTML = '';
+        var self = this;
         
-        this.data.cart.forEach(item => {
+        this.data.cart.forEach(function(item) {
             total += item.price * item.quantity;
-            const div = document.createElement('div');
+            var div = document.createElement('div');
             div.className = 'cart-item';
-            div.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:500;">${item.name}</div>
-                    <div style="font-size:12px;color:#6b7280;">$${item.price} × ${item.quantity}</div>
-                </div>
-                <div style="display:flex;gap:4px;align-items:center;">
-                    <button class="control-btn" onclick="POS.updateQuantity('${item.id}', ${item.quantity - 1})">-</button>
-                    <span style="width:32px;text-align:center;">${item.quantity}</span>
-                    <button class="control-btn" onclick="POS.updateQuantity('${item.id}', ${item.quantity + 1})">+</button>
-                    <button class="control-btn" onclick="POS.removeFromCart('${item.id}')" style="background:#fef2f2;color:#dc2626;">×</button>
-                </div>
-            `;
+            div.innerHTML = '<div style="flex:1;"><div style="font-weight:500;">' + item.name + '</div><div style="font-size:12px;color:#6b7280;">$' + item.price + ' × ' + item.quantity + '</div></div><div style="display:flex;gap:4px;align-items:center;"><button class="control-btn" onclick="POS.updateQuantity(\'' + item.id + '\',' + (item.quantity - 1) + ')">-</button><span style="width:32px;text-align:center;">' + item.quantity + '</span><button class="control-btn" onclick="POS.updateQuantity(\'' + item.id + '\',' + (item.quantity + 1) + ')">+</button><button class="control-btn" onclick="POS.removeFromCart(\'' + item.id + '\')" style="background:#fef2f2;color:#dc2626;">×</button></div>';
             container.appendChild(div);
         });
         
-        totalEl.textContent = `總計: $${total}`;
+        totalEl.textContent = '總計: $' + total;
         btn.disabled = false;
     },
     
-    updateQuantity(id, newQty) {
+    updateQuantity: function(id, newQty) {
         if (newQty <= 0) {
             this.removeFromCart(id);
         } else {
-            const item = this.data.cart.find(i => i.id === id);
-            if (item) {
-                item.quantity = newQty;
-                this.updateCart();
+            for (var i = 0; i < this.data.cart.length; i++) {
+                if (this.data.cart[i].id === id) {
+                    this.data.cart[i].quantity = newQty;
+                    break;
+                }
             }
+            this.updateCart();
         }
     },
     
-    removeFromCart(id) {
-        this.data.cart = this.data.cart.filter(item => item.id !== id);
+    removeFromCart: function(id) {
+        this.data.cart = this.data.cart.filter(function(item) {
+            return item.id !== id;
+        });
         this.updateCart();
     },
     
-    async checkout() {
+    checkout: function() {
         if (this.data.cart.length === 0) return;
         
-        const total = this.data.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const sale = {
+        var total = 0;
+        for (var i = 0; i < this.data.cart.length; i++) {
+            total += this.data.cart[i].price * this.data.cart[i].quantity;
+        }
+        
+        var sale = {
             id: Date.now().toString(),
-            items: [...this.data.cart],
+            items: JSON.parse(JSON.stringify(this.data.cart)),
             total: total,
             timestamp: new Date().toISOString()
         };
         
-        await this.db.operate('sales', 'add', sale);
-        this.data.sales.push(sale);
-        this.showAlert(`結帳成功！總金額：$${total}`);
-        this.data.cart = [];
-        this.updateCart();
+        var self = this;
+        this.db.operate('sales', 'add', sale).then(function() {
+            self.data.sales.push(sale);
+            self.showAlert('結帳成功！總金額：$' + total);
+            self.data.cart = [];
+            self.updateCart();
+        });
     },
     
-    async addManualProduct() {
-        const name = document.getElementById('productName').value.trim();
-        const price = parseFloat(document.getElementById('productPrice').value);
+    addManualProduct: function() {
+        var name = document.getElementById('productName').value.trim();
+        var price = parseFloat(document.getElementById('productPrice').value);
         
         if (!name || !price) {
             this.showAlert('請輸入商品名稱和價格');
             return;
         }
         
-        // 創建臨時商品（不儲存到資料庫）
-        const tempProduct = {
+        var tempProduct = {
             id: 'temp_' + Date.now().toString(),
             name: name,
             price: price
         };
         
-        // 直接加入購物車
         this.addToCart(tempProduct);
-        
-        // 清空輸入框
         document.getElementById('productName').value = '';
         document.getElementById('productPrice').value = '';
-        
-        // 不調用 renderProducts()，所以不會顯示在商品網格中
-        // 不調用 db.operate()，所以不會儲存到資料庫
     },
     
-    showPage(page) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    showPage: function(page) {
+        var pages = document.querySelectorAll('.page');
+        for (var i = 0; i < pages.length; i++) {
+            pages[i].classList.remove('active');
+        }
         
-        const pageEl = document.getElementById(page + 'Page');
+        var buttons = document.querySelectorAll('.nav-btn');
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].classList.remove('active');
+        }
+        
+        var pageEl = document.getElementById(page + 'Page');
         if (pageEl) pageEl.classList.add('active');
         
-        event.target.classList.add('active');
+        if (window.event && window.event.target) {
+            window.event.target.classList.add('active');
+        }
         
         if (page === 'products') this.renderProductsTable();
         if (page === 'reports') {
             this.updateReports();
-            setTimeout(() => this.updateCharts(), 100);
+            var self = this;
+            setTimeout(function() { self.updateCharts(); }, 100);
         }
     },
     
-    renderProductsTable() {
-        const tbody = document.getElementById('productsTableBody');
+    renderProductsTable: function() {
+        var tbody = document.getElementById('productsTableBody');
         tbody.innerHTML = '';
         
         if (this.data.products.length === 0) {
@@ -276,21 +292,14 @@ window.POS = {
             return;
         }
         
-        this.data.products.forEach(p => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${p.name}</td>
-                <td>$${p.price}</td>
-                <td>
-                    <button class="button" onclick="POS.editProduct('${p.id}')" style="padding:6px 12px;font-size:12px;margin-right:8px;">編輯</button>
-                    <button class="button button-red" onclick="POS.deleteProduct('${p.id}')" style="padding:6px 12px;font-size:12px;">刪除</button>
-                </td>
-            `;
+        this.data.products.forEach(function(p) {
+            var row = document.createElement('tr');
+            row.innerHTML = '<td>' + p.name + '</td><td>$' + p.price + '</td><td><button class="button" onclick="POS.editProduct(\'' + p.id + '\')" style="padding:6px 12px;font-size:12px;margin-right:8px;">編輯</button><button class="button button-red" onclick="POS.deleteProduct(\'' + p.id + '\')" style="padding:6px 12px;font-size:12px;">刪除</button></td>';
             tbody.appendChild(row);
         });
     },
     
-    showProductModal(product = null) {
+    showProductModal: function(product) {
         this.data.editingId = product ? product.id : null;
         document.getElementById('modalTitle').textContent = product ? '編輯商品' : '新增商品';
         document.getElementById('modalProductName').value = product ? product.name : '';
@@ -298,127 +307,167 @@ window.POS = {
         document.getElementById('productModal').classList.remove('hidden');
     },
     
-    closeProductModal() {
+    closeProductModal: function() {
         document.getElementById('productModal').classList.add('hidden');
         this.data.editingId = null;
     },
     
-    async saveProduct() {
-        const name = document.getElementById('modalProductName').value.trim();
-        const price = parseFloat(document.getElementById('modalProductPrice').value);
+    saveProduct: function() {
+        var name = document.getElementById('modalProductName').value.trim();
+        var price = parseFloat(document.getElementById('modalProductPrice').value);
         
         if (!name || !price) {
             this.showAlert('請輸入商品名稱和價格');
             return;
         }
         
-        const product = {
+        var product = {
             id: this.data.editingId || Date.now().toString(),
             name: name,
             price: price
         };
         
-        await this.db.operate('products', 'put', product);
-        
-        if (this.data.editingId) {
-            const idx = this.data.products.findIndex(p => p.id === this.data.editingId);
-            if (idx !== -1) this.data.products[idx] = product;
-        } else {
-            this.data.products.push(product);
+        var self = this;
+        this.db.operate('products', 'put', product).then(function() {
+            if (self.data.editingId) {
+                for (var i = 0; i < self.data.products.length; i++) {
+                    if (self.data.products[i].id === self.data.editingId) {
+                        self.data.products[i] = product;
+                        break;
+                    }
+                }
+            } else {
+                self.data.products.push(product);
+            }
+            
+            self.renderProducts();
+            self.renderProductsTable();
+            self.closeProductModal();
+            self.showAlert(self.data.editingId ? '商品更新成功' : '商品新增成功');
+        });
+    },
+    
+    editProduct: function(id) {
+        for (var i = 0; i < this.data.products.length; i++) {
+            if (this.data.products[i].id === id) {
+                this.showProductModal(this.data.products[i]);
+                break;
+            }
         }
-        
-        this.renderProducts();
-        this.renderProductsTable();
-        this.closeProductModal();
-        this.showAlert(this.data.editingId ? '商品更新成功' : '商品新增成功');
     },
     
-    editProduct(id) {
-        const product = this.data.products.find(p => p.id === id);
-        if (product) this.showProductModal(product);
-    },
-    
-    async deleteProduct(id) {
+    deleteProduct: function(id) {
         if (!confirm('確定要刪除此商品嗎？')) return;
         
-        await this.db.operate('products', 'delete', id);
-        this.data.products = this.data.products.filter(p => p.id !== id);
-        this.renderProducts();
-        this.renderProductsTable();
-        this.showAlert('商品刪除成功');
+        var self = this;
+        this.db.operate('products', 'delete', id).then(function() {
+            self.data.products = self.data.products.filter(function(p) {
+                return p.id !== id;
+            });
+            self.renderProducts();
+            self.renderProductsTable();
+            self.showAlert('商品刪除成功');
+        });
     },
     
-    async clearAllSales() {
+    clearAllSales: function() {
         if (!confirm('確定要清除所有銷售記錄嗎？此操作無法復原！')) return;
         
-        // 清除資料庫中的所有銷售記錄
-        for (const sale of this.data.sales) {
-            await this.db.operate('sales', 'delete', sale.id);
-        }
+        var self = this;
+        var promises = [];
         
-        this.data.sales = [];
-        this.updateReports();
-        this.updateCharts();
-        this.showAlert('已清除所有銷售記錄');
+        this.data.sales.forEach(function(sale) {
+            promises.push(self.db.operate('sales', 'delete', sale.id));
+        });
+        
+        Promise.all(promises).then(function() {
+            self.data.sales = [];
+            self.updateReports();
+            self.updateCharts();
+            self.showAlert('已清除所有銷售記錄');
+        });
     },
     
-    async clearSingleSale(saleId) {
+    clearSingleSale: function(saleId) {
         if (!confirm('確定要刪除此筆銷售記錄嗎？')) return;
         
-        await this.db.operate('sales', 'delete', saleId);
-        this.data.sales = this.data.sales.filter(s => s.id !== saleId);
-        this.updateReports();
-        this.updateCharts();
-        this.showAlert('銷售記錄已刪除');
+        var self = this;
+        this.db.operate('sales', 'delete', saleId).then(function() {
+            self.data.sales = self.data.sales.filter(function(s) {
+                return s.id !== saleId;
+            });
+            self.updateReports();
+            self.updateCharts();
+            self.showAlert('銷售記錄已刪除');
+        });
     },
+    
+    updateReports: function() {
         document.getElementById('totalProducts').textContent = this.data.products.length;
         document.getElementById('totalSales').textContent = this.data.sales.length;
         
-        const revenue = this.data.sales.reduce((sum, s) => sum + s.total, 0);
+        var revenue = 0;
+        for (var i = 0; i < this.data.sales.length; i++) {
+            revenue += this.data.sales[i].total;
+        }
+        
         document.getElementById('totalRevenue').textContent = '$' + revenue.toLocaleString();
         document.getElementById('avgOrder').textContent = this.data.sales.length > 0 ? '$' + Math.round(revenue / this.data.sales.length) : '$0';
         
-        const history = document.getElementById('salesHistory');
+        var history = document.getElementById('salesHistory');
         if (this.data.sales.length === 0) {
             history.innerHTML = '<p style="text-align:center;color:#6b7280;padding:40px;">暫無銷售記錄</p>';
         } else {
             history.innerHTML = '';
-            this.data.sales.slice(-10).reverse().forEach(sale => {
-                const div = document.createElement('div');
-                div.style.cssText = 'padding:12px;border-bottom:1px solid #f3f4f6;';
-                div.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                        <span style="font-size:12px;color:#6b7280;">${new Date(sale.timestamp).toLocaleString('zh-TW')}</span>
-                        <span style="font-weight:600;">$${sale.total}</span>
-                    </div>
-                    <div style="font-size:12px;color:#6b7280;">
-                        ${sale.items.map(i => `${i.name}×${i.quantity}`).join(', ')}
-                    </div>
-                `;
+            var salesReversed = this.data.sales.slice().reverse();
+            
+            salesReversed.forEach(function(sale) {
+                var div = document.createElement('div');
+                div.style.cssText = 'padding:12px;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;';
+                
+                var itemsText = '';
+                for (var i = 0; i < sale.items.length; i++) {
+                    if (i > 0) itemsText += ', ';
+                    itemsText += sale.items[i].name + '×' + sale.items[i].quantity;
+                }
+                
+                div.innerHTML = '<div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;color:#6b7280;">' + new Date(sale.timestamp).toLocaleString('zh-TW') + '</span><span style="font-weight:600;">$' + sale.total + '</span></div><div style="font-size:12px;color:#6b7280;">' + itemsText + '</div></div><button class="button button-red" onclick="POS.clearSingleSale(\'' + sale.id + '\')" style="padding:6px 12px;font-size:12px;margin-left:12px;">刪除</button>';
                 history.appendChild(div);
             });
         }
     },
     
-    updateCharts() {
-        if (this.data.charts.quantity) this.data.charts.quantity.destroy();
-        if (this.data.charts.revenue) this.data.charts.revenue.destroy();
+    updateCharts: function() {
+        if (this.data.charts.quantity) {
+            this.data.charts.quantity.destroy();
+            this.data.charts.quantity = null;
+        }
+        if (this.data.charts.revenue) {
+            this.data.charts.revenue.destroy();
+            this.data.charts.revenue = null;
+        }
         
-        const stats = {};
-        this.data.sales.forEach(sale => {
-            sale.items.forEach(item => {
-                if (!stats[item.name]) stats[item.name] = { qty: 0, rev: 0 };
+        var stats = {};
+        for (var i = 0; i < this.data.sales.length; i++) {
+            var sale = this.data.sales[i];
+            for (var j = 0; j < sale.items.length; j++) {
+                var item = sale.items[j];
+                if (!stats[item.name]) {
+                    stats[item.name] = { qty: 0, rev: 0 };
+                }
                 stats[item.name].qty += item.quantity;
                 stats[item.name].rev += item.quantity * item.price;
-            });
-        });
+            }
+        }
         
-        const names = Object.keys(stats);
+        var names = Object.keys(stats);
         if (names.length === 0) {
             document.getElementById('quantityEmpty').classList.remove('hidden');
             document.getElementById('revenueEmpty').classList.remove('hidden');
             document.getElementById('quantityChart').style.display = 'none';
             document.getElementById('revenueChart').style.display = 'none';
+            document.getElementById('quantityLegend').innerHTML = '';
+            document.getElementById('revenueLegend').innerHTML = '';
             return;
         }
         
@@ -427,28 +476,47 @@ window.POS = {
         document.getElementById('quantityChart').style.display = 'block';
         document.getElementById('revenueChart').style.display = 'block';
         
-        const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F'];
-        const qtyData = names.map((n,i) => ({ name: n, value: stats[n].qty, color: colors[i % colors.length] })).sort((a,b) => b.value - a.value);
-        const revData = names.map((n,i) => ({ name: n, value: stats[n].rev, color: colors[i % colors.length] })).sort((a,b) => b.value - a.value);
+        var colors = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F'];
+        
+        var qtyData = [];
+        for (var i = 0; i < names.length; i++) {
+            qtyData.push({
+                name: names[i],
+                value: stats[names[i]].qty,
+                color: colors[i % colors.length]
+            });
+        }
+        qtyData.sort(function(a, b) { return b.value - a.value; });
+        
+        var revData = [];
+        for (var i = 0; i < names.length; i++) {
+            revData.push({
+                name: names[i],
+                value: stats[names[i]].rev,
+                color: colors[i % colors.length]
+            });
+        }
+        revData.sort(function(a, b) { return b.value - a.value; });
+        
+        var qtyLabels = [];
+        var qtyValues = [];
+        var qtyColors = [];
+        for (var i = 0; i < qtyData.length; i++) {
+            qtyLabels.push(qtyData[i].name);
+            qtyValues.push(qtyData[i].value);
+            qtyColors.push(qtyData[i].color);
+        }
         
         this.data.charts.quantity = new Chart(document.getElementById('quantityChart'), {
             type: 'pie',
             data: {
-                labels: qtyData.map(d => d.name),
-                datasets: [{ data: qtyData.map(d => d.value), backgroundColor: qtyData.map(d => d.color), borderWidth: 2 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } }
-            }
-        });
-        
-        this.data.charts.revenue = new Chart(document.getElementById('revenueChart'), {
-            type: 'pie',
-            data: {
-                labels: revData.map(d => d.name),
-                datasets: [{ data: revData.map(d => d.value), backgroundColor: revData.map(d => d.color), borderWidth: 2 }]
+                labels: qtyLabels,
+                datasets: [{
+                    data: qtyValues,
+                    backgroundColor: qtyColors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
             },
             options: {
                 responsive: true,
@@ -461,34 +529,61 @@ window.POS = {
         this.renderLegend('revenueLegend', revData, true);
     },
     
-    renderLegend(id, data, isMoney) {
-        const container = document.getElementById(id);
-        const total = data.reduce((sum, d) => sum + d.value, 0);
+    renderLegend: function(id, data, isMoney) {
+        var container = document.getElementById(id);
+        var total = 0;
+        for (var i = 0; i < data.length; i++) {
+            total += data[i].value;
+        }
         container.innerHTML = '';
         
-        data.forEach(d => {
-            const pct = ((d.value / total) * 100).toFixed(1);
-            const div = document.createElement('div');
+        for (var i = 0; i < data.length; i++) {
+            var d = data[i];
+            var pct = ((d.value / total) * 100).toFixed(1);
+            var div = document.createElement('div');
             div.className = 'legend-item';
-            div.innerHTML = `
-                <div style="display:flex;align-items:center;">
-                    <span class="legend-color" style="background:${d.color};"></span>
-                    <span>${d.name}</span>
-                </div>
-                <div>
-                    <span style="font-weight:600;">${isMoney ? '$' + d.value.toLocaleString() : d.value.toLocaleString()}</span>
-                    <span style="font-size:12px;color:#6b7280;margin-left:4px;">(${pct}%)</span>
-                </div>
-            `;
-            container.appendChild(div);
+            div.innerHTML = '<div style="display:flex;align-items:center;"><span class="legend-color" style="background:' + d.color + ';"></span><span>' + d.name + '</span></div><div><span style="font-weight:600;">' + (isMoney ? 'atio: false,
+                plugins: { legend: { display: false } }
+            }
         });
+        
+        var revLabels = [];
+        var revValues = [];
+        var revColors = [];
+        for (var i = 0; i < revData.length; i++) {
+            revLabels.push(revData[i].name);
+            revValues.push(revData[i].value);
+            revColors.push(revData[i].color);
+        }
+        
+        this.data.charts.revenue = new Chart(document.getElementById('revenueChart'), {
+            type: 'pie',
+            data: {
+                labels: revLabels,
+                datasets: [{
+                    data: revValues,
+                    backgroundColor: revColors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectR + d.value.toLocaleString() : d.value.toLocaleString()) + '</span><span style="font-size:12px;color:#6b7280;margin-left:4px;">(' + pct + '%)</span></div>';
+            container.appendChild(div);
+        }
     },
     
-    exportData() {
-        const data = { products: this.data.products, sales: this.data.sales, timestamp: new Date().toISOString() };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+    exportData: function() {
+        var data = {
+            products: this.data.products,
+            sales: this.data.sales,
+            timestamp: new Date().toISOString()
+        };
+        
+        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
         a.download = 'POS備份_' + new Date().toLocaleDateString('zh-TW').replace(/\//g, '-') + '.json';
         document.body.appendChild(a);
@@ -498,64 +593,77 @@ window.POS = {
         this.showAlert('資料匯出成功！');
     },
     
-    importData() {
-        const file = document.getElementById('importFile').files[0];
+    importData: function() {
+        var file = document.getElementById('importFile').files[0];
         if (!file) {
             this.showAlert('請選擇檔案');
             return;
         }
         
-        const reader = new FileReader();
-        reader.onload = async (e) => {
+        var reader = new FileReader();
+        var self = this;
+        
+        reader.onload = function(e) {
             try {
-                const data = JSON.parse(e.target.result);
+                var data = JSON.parse(e.target.result);
                 if (!confirm('匯入將覆蓋現有資料，確定繼續？')) return;
                 
+                var promises = [];
+                
                 if (data.products) {
-                    for (const p of data.products) {
-                        await this.db.operate('products', 'put', p);
+                    for (var i = 0; i < data.products.length; i++) {
+                        promises.push(self.db.operate('products', 'put', data.products[i]));
                     }
-                    this.data.products = data.products;
-                    this.renderProducts();
-                    this.renderProductsTable();
                 }
                 
                 if (data.sales) {
-                    for (const s of data.sales) {
-                        await this.db.operate('sales', 'put', s);
+                    for (var i = 0; i < data.sales.length; i++) {
+                        promises.push(self.db.operate('sales', 'put', data.sales[i]));
                     }
-                    this.data.sales = data.sales;
                 }
                 
-                document.getElementById('importFile').value = '';
-                this.showAlert('匯入成功！');
+                Promise.all(promises).then(function() {
+                    if (data.products) {
+                        self.data.products = data.products;
+                        self.renderProducts();
+                        self.renderProductsTable();
+                    }
+                    if (data.sales) {
+                        self.data.sales = data.sales;
+                    }
+                    document.getElementById('importFile').value = '';
+                    self.showAlert('匯入成功！');
+                });
             } catch (err) {
                 console.error(err);
-                this.showAlert('匯入失敗，請檢查檔案格式');
+                self.showAlert('匯入失敗，請檢查檔案格式');
             }
         };
+        
         reader.readAsText(file);
     },
     
-    showAlert(msg) {
+    showAlert: function(msg) {
         document.getElementById('alertMessage').textContent = msg;
         document.getElementById('alertModal').classList.remove('hidden');
     },
     
-    closeAlert() {
+    closeAlert: function() {
         document.getElementById('alertModal').classList.add('hidden');
     },
     
-    async init() {
+    init: function() {
         console.log('初始化 POS 系統...');
-        await this.loadProducts();
-        await this.loadSales();
-        console.log('載入完成 - 商品:', this.data.products.length, '銷售:', this.data.sales.length);
+        var self = this;
+        this.loadProducts().then(function() {
+            return self.loadSales();
+        }).then(function() {
+            console.log('載入完成 - 商品:', self.data.products.length, '銷售:', self.data.sales.length);
+        });
     }
 };
 
-// 頁面載入後初始化
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     POS.init();
 });
 </script>
@@ -580,8 +688,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 class="section-title">商品選擇</h2>
                     <div class="card">
                         <h3 style="font-weight:500;margin-bottom:12px;">快速新增商品</h3>
-                        <div style="display:flex;gap:8px;">
-                            <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex:1;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <input id="productName" type="text" class="input" placeholder="商品名稱" style="flex:1;min-width:150px;">
                             <input id="productPrice" type="number" class="input" placeholder="價格" step="0.01" style="width:120px;">
                             <button onclick="POS.addManualProduct()" class="button button-green">新增</button>
                         </div>
@@ -608,7 +716,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="button button-green" onclick="POS.showProductModal()">新增商品</button>
                 </div>
                 <div class="card">
-                    <table class="table"><thead><tr><th>商品名稱</th><th>價格</th><th>操作</th></tr></thead><tbody id="productsTableBody"></tbody></table>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>商品名稱</th>
+                                <th>價格</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -617,10 +734,22 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="page-content">
                 <h2 class="section-title">銷售報表</h2>
                 <div class="stats-grid">
-                    <div class="stat-card"><div id="totalProducts" class="stat-number">0</div><div class="stat-label">商品總數</div></div>
-                    <div class="stat-card"><div id="totalSales" class="stat-number">0</div><div class="stat-label">銷售筆數</div></div>
-                    <div class="stat-card"><div id="totalRevenue" class="stat-number">$0</div><div class="stat-label">總營收</div></div>
-                    <div class="stat-card"><div id="avgOrder" class="stat-number">$0</div><div class="stat-label">平均客單價</div></div>
+                    <div class="stat-card">
+                        <div id="totalProducts" class="stat-number">0</div>
+                        <div class="stat-label">商品總數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="totalSales" class="stat-number">0</div>
+                        <div class="stat-label">銷售筆數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="totalRevenue" class="stat-number">$0</div>
+                        <div class="stat-label">總營收</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="avgOrder" class="stat-number">$0</div>
+                        <div class="stat-label">平均客單價</div>
+                    </div>
                 </div>
                 
                 <div class="charts-container">
@@ -656,7 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3 style="font-weight:600;margin:0;">銷售記錄</h3>
                         <button class="button button-red" onclick="POS.clearAllSales()" style="padding:8px 16px;font-size:14px;">清除全部記錄</button>
                     </div>
-                    <div id="salesHistory" style="max-height:300px;overflow-y:auto;">
+                    <div id="salesHistory" style="max-height:400px;overflow-y:auto;">
                         <p style="text-align:center;color:#6b7280;padding:40px;">暫無銷售記錄</p>
                     </div>
                 </div>
@@ -711,4 +840,31 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 </body>
-</html>
+</html>atio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+        
+        var revLabels = [];
+        var revValues = [];
+        var revColors = [];
+        for (var i = 0; i < revData.length; i++) {
+            revLabels.push(revData[i].name);
+            revValues.push(revData[i].value);
+            revColors.push(revData[i].color);
+        }
+        
+        this.data.charts.revenue = new Chart(document.getElementById('revenueChart'), {
+            type: 'pie',
+            data: {
+                labels: revLabels,
+                datasets: [{
+                    data: revValues,
+                    backgroundColor: revColors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectR
