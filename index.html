@@ -233,19 +233,22 @@ window.POS = {
             return;
         }
         
-        const product = {
-            id: Date.now().toString(),
+        // 創建臨時商品（不儲存到資料庫）
+        const tempProduct = {
+            id: 'temp_' + Date.now().toString(),
             name: name,
             price: price
         };
         
-        await this.db.operate('products', 'put', product);
-        this.data.products.push(product);
-        this.addToCart(product);
+        // 直接加入購物車
+        this.addToCart(tempProduct);
         
+        // 清空輸入框
         document.getElementById('productName').value = '';
         document.getElementById('productPrice').value = '';
-        this.renderProducts();
+        
+        // 不調用 renderProducts()，所以不會顯示在商品網格中
+        // 不調用 db.operate()，所以不會儲存到資料庫
     },
     
     showPage(page) {
