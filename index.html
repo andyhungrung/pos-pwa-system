@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6}
 .page{display:none;height:100%}
 .page.active{display:flex;flex-direction:column}
 .page-content{flex:1;padding:16px;overflow-y:auto}
-.section-title{font-size:20px;font-weight:600;margin-bottom:16px}
+.section-title{font-size:20px;font-weight:600;margin-bottom:16px;flex-shrink:0}
 .card{background:white;padding:16px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:16px}
 .input{padding:12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;width:100%}
 .button{padding:12px 16px;background:#2563eb;color:white;border:none;border-radius:6px;font-weight:500;cursor:pointer}
@@ -29,12 +29,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f4f6}
 .button-green{background:#16a34a}
 .button-red{background:#dc2626}
 .button-gray{background:#6b7280}
-.sales-layout{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sales-layout{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 @media (min-width:769px){.sales-layout{flex-direction:row}}
-.products-area{flex:2;padding:16px;overflow-y:auto;display:flex;flex-direction:column}
-.cart-area{flex:1;background:white;border-top:2px solid #e5e7eb;padding:16px;display:flex;flex-direction:column}
-@media (min-width:769px){.cart-area{width:320px;border-top:none;border-left:1px solid #e5e7eb}}
-.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;overflow-y:auto}
+.products-area{flex:2;padding:16px;overflow-y:auto;display:flex;flex-direction:column;min-height:0}
+.cart-area{flex:1;background:white;border-top:2px solid #e5e7eb;padding:16px;display:flex;flex-direction:column;min-height:0;max-height:50vh}
+@media (min-width:769px){.cart-area{width:320px;border-top:none;border-left:1px solid #e5e7eb;max-height:none}}
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;overflow-y:auto;flex:1;padding-bottom:16px}
 @media (min-width:769px){.product-grid{grid-template-columns:repeat(3,1fr)}}
 .product-card{background:white;padding:16px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;text-align:center;min-height:80px;display:flex;flex-direction:column;justify-content:center;border:2px solid transparent}
 .product-card:hover{border-color:#60a5fa}
